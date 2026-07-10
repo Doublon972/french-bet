@@ -17,29 +17,34 @@
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
 
+    <!-- HEADER -->
     <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
         
-        <!-- Titre avec le Logo agrandi et sans cercle -->
         <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
             <img src="french.png" alt="Logo La French" class="w-24 h-24 object-contain drop-shadow-xl">
             LAFRENCH <span class="text-slate-500 font-light">| Fight-Club</span>
         </h1>
         
-        <div class="flex flex-wrap gap-4 items-center justify-center md:justify-end">
-            <!-- Nouvel Encart : Bénéfice Maison (Banque) -->
-            <div id="adminPnlDisplay" class="bg-slate-800 border border-slate-700 px-4 py-1.5 rounded-full text-sm shadow-lg">
+        <div class="flex flex-wrap gap-3 items-center justify-center md:justify-end">
+            <!-- Banque PnL -->
+            <div id="adminPnlDisplay" class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
                 Banque : <span class="text-slate-400 font-black">0$</span>
             </div>
 
-            <div class="bg-indigo-900/50 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-300">
-                Mode Administrateur Libre
-            </div>
-            <button onclick="window.resetAllData()" class="text-xs bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-1.5 rounded-full transition font-bold">
-                ⚠ Reset Database
+            <!-- Bouton Paramètres -->
+            <button onclick="window.openSettingsModal()" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-4 py-2 rounded-xl transition text-sm flex items-center gap-2 shadow-lg">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Paramètres
+            </button>
+
+            <!-- Bouton Reset -->
+            <button onclick="window.resetAllData()" class="bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold flex items-center gap-2">
+                ⚠ Reset Data
             </button>
         </div>
     </div>
 
+    <!-- MAIN GRID -->
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-1 space-y-6">
@@ -148,6 +153,7 @@
         </div>
     </div>
 
+    <!-- MODALE HISTORIQUE -->
     <div id="historyModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-lg w-full">
             <div class="flex justify-between items-center mb-6">
@@ -160,6 +166,46 @@
         </div>
     </div>
 
+    <!-- MODALE PARAMETRES (NOUVEAU) -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Paramètres de l'Algorithme
+                </h3>
+                <button onclick="window.closeSettingsModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
+            </div>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-slate-300 mb-1">Elo de départ (Base)</label>
+                    <p class="text-xs text-slate-500 mb-2">Cote d'un nouveau combattant avec 0 victoire / 0 défaite.</p>
+                    <input type="number" id="setBaseElo" class="w-full p-2 rounded bg-slate-900 border border-slate-600 text-white focus:border-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="bg-emerald-900/20 p-3 rounded-xl border border-emerald-500/20">
+                    <label class="block text-sm font-bold text-emerald-400 mb-1">Facteur K (Victoire)</label>
+                    <p class="text-xs text-emerald-600/70 mb-2">Plus il est élevé, plus la cote baissera vite (et baissera de manière forte) en cas de victoire.</p>
+                    <input type="number" id="setKWin" class="w-full p-2 rounded bg-slate-900 border border-emerald-600/50 text-white focus:border-emerald-500 focus:outline-none">
+                </div>
+
+                <div class="bg-red-900/20 p-3 rounded-xl border border-red-500/20">
+                    <label class="block text-sm font-bold text-red-400 mb-1">Facteur K (Défaite)</label>
+                    <p class="text-xs text-red-600/70 mb-2">Plus il est élevé, plus la cote montera vite en cas de défaite.</p>
+                    <input type="number" id="setKLoss" class="w-full p-2 rounded bg-slate-900 border border-red-600/50 text-white focus:border-red-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-700">
+                <button onclick="window.saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold transition shadow-lg shadow-indigo-500/20">
+                    Sauvegarder pour tous
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -182,16 +228,35 @@
         const draftRef = ref(db, 'draft');
         const activeMatchRef = ref(db, 'activeMatch');
         const historyRef = ref(db, 'history');
+        const settingsRef = ref(db, 'settings');
 
         let players = [];
         let draftA = [];
         let draftB = [];
         let activeMatch = null;
         let matchHistory = [];
+        
+        // Paramètres par défaut
+        let appSettings = {
+            baseElo: 1000,
+            kWin: 32,
+            kLoss: 32
+        };
 
         // -----------------------------------------
         // ECOUTEURS FIREBASE
         // -----------------------------------------
+
+        onValue(settingsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                appSettings = {
+                    baseElo: Number(data.baseElo) || 1000,
+                    kWin: Number(data.kWin) || 32,
+                    kLoss: Number(data.kLoss) || 32
+                };
+            }
+        });
 
         onValue(playersRef, (snapshot) => {
             const data = snapshot.val();
@@ -240,7 +305,14 @@
         window.addPlayer = () => {
             const nameInput = document.getElementById('playerName');
             if (nameInput.value.trim() === '') return;
-            push(playersRef, { name: nameInput.value.trim(), elo: 1000, wins: 0, losses: 0 });
+            
+            // Utilisation du Base Elo paramétré pour les nouveaux
+            push(playersRef, { 
+                name: nameInput.value.trim(), 
+                elo: appSettings.baseElo, 
+                wins: 0, 
+                losses: 0 
+            });
             nameInput.value = '';
         };
 
@@ -270,8 +342,8 @@
             const newMatch = {
                 teamA: teamAData,
                 teamB: teamBData,
-                oddsA: Math.min(1 / probA, 20).toFixed(2),
-                oddsB: Math.min(1 / probB, 20).toFixed(2),
+                oddsA: Math.max(1.01, Math.min(1 / probA, 20)).toFixed(2),
+                oddsB: Math.max(1.01, Math.min(1 / probB, 20)).toFixed(2),
                 probA: probA,
                 probB: probB,
                 bets: {} 
@@ -284,6 +356,32 @@
 
         window.cancelMatch = () => {
             set(activeMatchRef, null);
+        };
+
+        // -----------------------------------------
+        // GESTION DES PARAMETRES
+        // -----------------------------------------
+
+        window.openSettingsModal = () => {
+            document.getElementById('setBaseElo').value = appSettings.baseElo;
+            document.getElementById('setKWin').value = appSettings.kWin;
+            document.getElementById('setKLoss').value = appSettings.kLoss;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        };
+
+        window.closeSettingsModal = () => {
+            document.getElementById('settingsModal').classList.add('hidden');
+        };
+
+        window.saveSettings = () => {
+            const newSettings = {
+                baseElo: Number(document.getElementById('setBaseElo').value) || 1000,
+                kWin: Number(document.getElementById('setKWin').value) || 32,
+                kLoss: Number(document.getElementById('setKLoss').value) || 32
+            };
+            set(settingsRef, newSettings).then(() => {
+                window.closeSettingsModal();
+            });
         };
 
         // -----------------------------------------
@@ -320,24 +418,28 @@
             if (!activeMatch) return;
             if(!confirm(`Confirmer la victoire de l'équipe ${winnerStr === 'A' ? 'Bleue' : 'Rouge'} ?`)) return;
 
-            const K = 32;
-            const scoreA = winnerStr === 'A' ? 1 : 0;
-            const scoreB = winnerStr === 'B' ? 1 : 0;
-            const eloChangeA = K * (scoreA - activeMatch.probA);
-            const eloChangeB = K * (scoreB - activeMatch.probB);
+            // Calcul basé sur les Facteurs K personnalisés !
+            const eloChangeA_win = appSettings.kWin * (1 - activeMatch.probA);
+            const eloChangeA_loss = appSettings.kLoss * (0 - activeMatch.probA); // Ce sera un chiffre négatif
+            
+            const eloChangeB_win = appSettings.kWin * (1 - activeMatch.probB);
+            const eloChangeB_loss = appSettings.kLoss * (0 - activeMatch.probB); // Ce sera un chiffre négatif
+
+            const eloChangeA = winnerStr === 'A' ? eloChangeA_win : eloChangeA_loss;
+            const eloChangeB = winnerStr === 'B' ? eloChangeB_win : eloChangeB_loss;
 
             const updates = {};
 
             // 1. Mise à jour Elo
             activeMatch.teamA.forEach(p => {
-                updates[`players/${p.id}/elo`] = p.elo + eloChangeA;
-                updates[`players/${p.id}/wins`] = scoreA === 1 ? p.wins + 1 : p.wins;
-                updates[`players/${p.id}/losses`] = scoreA === 0 ? p.losses + 1 : p.losses;
+                updates[`players/${p.id}/elo`] = Math.max(100, p.elo + eloChangeA); // Minimum 100
+                updates[`players/${p.id}/wins`] = winnerStr === 'A' ? p.wins + 1 : p.wins;
+                updates[`players/${p.id}/losses`] = winnerStr === 'B' ? p.losses + 1 : p.losses;
             });
             activeMatch.teamB.forEach(p => {
-                updates[`players/${p.id}/elo`] = p.elo + eloChangeB;
-                updates[`players/${p.id}/wins`] = scoreB === 1 ? p.wins + 1 : p.wins;
-                updates[`players/${p.id}/losses`] = scoreB === 0 ? p.losses + 1 : p.losses;
+                updates[`players/${p.id}/elo`] = Math.max(100, p.elo + eloChangeB); // Minimum 100
+                updates[`players/${p.id}/wins`] = winnerStr === 'B' ? p.wins + 1 : p.wins;
+                updates[`players/${p.id}/losses`] = winnerStr === 'A' ? p.losses + 1 : p.losses;
             });
 
             // 2. Archivage
@@ -367,12 +469,14 @@
             if(confirm("⚠️ ATTENTION : Voulez-vous vraiment effacer TOUS les joueurs, l'historique et la draft ? Cette action est irréversible.")) {
                 const securityCheck = prompt("Tapez 'RESET' (en majuscule) pour confirmer la suppression définitive :");
                 if (securityCheck === 'RESET') {
-                    set(ref(db), {
+                    const resetUpdates = {
                         players: null,
                         draft: null,
                         activeMatch: null,
                         history: null
-                    }).then(() => {
+                    };
+                    // On ne reset pas les settings par défaut
+                    update(ref(db), resetUpdates).then(() => {
                         alert("Base de données vidée avec succès.");
                     }).catch(e => alert("Erreur lors de la réinitialisation : " + e));
                 }
