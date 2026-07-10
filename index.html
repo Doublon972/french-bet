@@ -18,7 +18,12 @@
 <body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 class="text-3xl font-bold text-white tracking-tight">⚔️ ARENA <span class="text-slate-500 font-light">| E-Sport</span></h1>
+        
+        <!-- Titre avec le Logo -->
+        <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+            <img src="french.jpg" alt="Logo La French" class="w-12 h-12 object-cover rounded-full shadow-lg border border-slate-700">
+            LAFRENCH <span class="text-slate-500 font-light">| Fight-Club</span>
+        </h1>
         
         <div class="flex flex-wrap gap-4 items-center justify-center md:justify-end">
             <!-- Nouvel Encart : Bénéfice Maison (Banque) -->
@@ -213,7 +218,7 @@
             }
             matchHistory.sort((a, b) => b.timestamp - a.timestamp);
             renderHistory();
-            calculateAndRenderPnL(); // Appel pour recalculer les gains
+            calculateAndRenderPnL();
         });
 
         onValue(activeMatchRef, (snapshot) => {
@@ -381,15 +386,12 @@
         function calculateAndRenderPnL() {
             let totalPnL = 0;
 
-            // Parcours de tous les matchs terminés dans l'historique
             matchHistory.forEach(match => {
                 if (match.bets) {
                     Object.values(match.bets).forEach(bet => {
                         if (bet.team === match.winner) {
-                            // Le parieur a gagné, la maison perd le bénéfice net du parieur
                             totalPnL -= (bet.potentialWin - bet.amount);
                         } else {
-                            // Le parieur a perdu, la maison encaisse la mise
                             totalPnL += bet.amount;
                         }
                     });
