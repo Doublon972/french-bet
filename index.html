@@ -20,7 +20,12 @@
     <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 class="text-3xl font-bold text-white tracking-tight">⚔️ ARENA <span class="text-slate-500 font-light">| E-Sport</span></h1>
         
-        <div class="flex gap-4 items-center">
+        <div class="flex flex-wrap gap-4 items-center justify-center md:justify-end">
+            <!-- Nouvel Encart : Bénéfice Maison (Banque) -->
+            <div id="adminPnlDisplay" class="bg-slate-800 border border-slate-700 px-4 py-1.5 rounded-full text-sm shadow-lg">
+                Banque : <span class="text-slate-400 font-black">0$</span>
+            </div>
+
             <div class="bg-indigo-900/50 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-300">
                 Mode Administrateur Libre
             </div>
@@ -113,7 +118,8 @@
                         <div class="text-2xl font-black text-slate-600 italic mb-4">VS</div>
                         <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider text-center">Paris en cours</h4>
                         <div id="liveBets" class="w-full space-y-2 text-xs max-h-[300px] overflow-y-auto text-center">
-                            </div>
+                            <!-- Rempli en JS -->
+                        </div>
                     </div>
 
                     <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col">
@@ -144,7 +150,8 @@
                 <button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
             </div>
             <div id="historyModalContent" class="space-y-4">
-                </div>
+                <!-- Rempli en JS -->
+            </div>
         </div>
     </div>
 
@@ -206,6 +213,7 @@
             }
             matchHistory.sort((a, b) => b.timestamp - a.timestamp);
             renderHistory();
+            calculateAndRenderPnL(); // Appel pour recalculer les gains
         });
 
         onValue(activeMatchRef, (snapshot) => {
@@ -261,7 +269,7 @@
                 oddsB: Math.min(1 / probB, 20).toFixed(2),
                 probA: probA,
                 probB: probB,
-                bets: {} // Changé en objet pour correspondre à Firebase
+                bets: {} 
             };
 
             set(activeMatchRef, newMatch).then(() => {
@@ -335,7 +343,7 @@
                 oddsA: activeMatch.oddsA,
                 oddsB: activeMatch.oddsB,
                 winner: winnerStr,
-                bets: activeMatch.bets || {} // On sauvegarde les paris ici !
+                bets: activeMatch.bets || {} 
             };
             const newHistoryRef = push(historyRef);
             updates[`history/${newHistoryRef.key}`] = historyEntry;
@@ -367,13 +375,44 @@
         };
 
         // -----------------------------------------
+        // CALCUL DES BÉNÉFICES (MAISON)
+        // -----------------------------------------
+
+        function calculateAndRenderPnL() {
+            let totalPnL = 0;
+
+            // Parcours de tous les matchs terminés dans l'historique
+            matchHistory.forEach(match => {
+                if (match.bets) {
+                    Object.values(match.bets).forEach(bet => {
+                        if (bet.team === match.winner) {
+                            // Le parieur a gagné, la maison perd le bénéfice net du parieur
+                            totalPnL -= (bet.potentialWin - bet.amount);
+                        } else {
+                            // Le parieur a perdu, la maison encaisse la mise
+                            totalPnL += bet.amount;
+                        }
+                    });
+                }
+            });
+
+            const pnlElement = document.getElementById('adminPnlDisplay');
+            if (totalPnL > 0) {
+                pnlElement.innerHTML = `Banque : <span class="text-emerald-400 font-black">+${totalPnL.toFixed(0)}$</span>`;
+            } else if (totalPnL < 0) {
+                pnlElement.innerHTML = `Banque : <span class="text-red-500 font-black">${totalPnL.toFixed(0)}$</span>`;
+            } else {
+                pnlElement.innerHTML = `Banque : <span class="text-slate-400 font-black">0$</span>`;
+            }
+        }
+
+        // -----------------------------------------
         // GESTION MODALE HISTORIQUE
         // -----------------------------------------
 
         window.openHistoryModal = (matchData) => {
             const content = document.getElementById('historyModalContent');
             
-            // Formatage de la liste des paris
             let betsHTML = '<div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré pour ce match.</div>';
             
             if (matchData.bets && Object.keys(matchData.bets).length > 0) {
@@ -400,7 +439,6 @@
                 betsHTML += '</div>';
             }
 
-            // Construction du contenu de la modale
             content.innerHTML = `
                 <div class="flex justify-between items-center mb-6 pb-6 border-b border-slate-700 text-center">
                     <div class="w-5/12 ${matchData.winner === 'A' ? 'text-blue-400 font-bold' : 'text-slate-500'}">
@@ -547,10 +585,8 @@
             matchHistory.forEach(m => {
                 const isAWin = m.winner === 'A';
                 const li = document.createElement('li');
-                // Ajout des styles pour rendre cliquable (cursor-pointer, hover)
                 li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm";
                 
-                // On passe l'objet du match à la fonction d'ouverture de la modale
                 li.onclick = () => window.openHistoryModal(m);
                 
                 li.innerHTML = `
