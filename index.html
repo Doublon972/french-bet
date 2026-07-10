@@ -17,20 +17,23 @@
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
 
-    <!-- Header -->
-    <div class="max-w-7xl mx-auto mb-8 flex justify-between items-center gap-4">
+    <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 class="text-3xl font-bold text-white tracking-tight">⚔️ ARENA <span class="text-slate-500 font-light">| E-Sport</span></h1>
-        <div class="bg-indigo-900/50 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-300">
-            Mode Administrateur Libre
+        
+        <div class="flex gap-4 items-center">
+            <div class="bg-indigo-900/50 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-300">
+                Mode Administrateur Libre
+            </div>
+            <button onclick="window.resetAllData()" class="text-xs bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-1.5 rounded-full transition font-bold">
+                ⚠ Reset Database
+            </button>
         </div>
     </div>
 
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- COLONNE GAUCHE : Joueurs & Historique -->
         <div class="lg:col-span-1 space-y-6">
             
-            <!-- Ajout Joueur -->
             <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
                 <h2 class="text-lg font-semibold mb-4 text-emerald-400 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
@@ -42,23 +45,19 @@
                 </div>
             </div>
 
-            <!-- Classement -->
             <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
                 <h2 class="text-lg font-semibold mb-4 text-white">🏆 Classement</h2>
                 <ul id="leaderboard" class="space-y-3 max-h-[300px] overflow-y-auto pr-2"></ul>
             </div>
 
-            <!-- Historique -->
             <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
-                <h2 class="text-lg font-semibold mb-4 text-white">📜 Historique (5 derniers)</h2>
+                <h2 class="text-lg font-semibold mb-4 text-white">📜 Historique (Cliquable)</h2>
                 <ul id="historyList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 text-sm"></ul>
             </div>
         </div>
 
-        <!-- COLONNE DROITE : Draft & Match -->
         <div class="lg:col-span-2 space-y-6">
             
-            <!-- Salle de Draft (Masquée si match en cours) -->
             <div id="draftSection" class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm transition-all">
                 <h2 class="text-xl font-bold mb-6 text-center text-white flex justify-center items-center gap-3">
                     <span class="relative flex h-3 w-3">
@@ -87,7 +86,6 @@
                 </div>
             </div>
 
-            <!-- Section Match En Cours (Masquée si aucun match) -->
             <div id="matchSection" class="hidden bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm fade-in">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-white mb-2">🔥 MATCH EN COURS 🔥</h2>
@@ -96,7 +94,6 @@
 
                 <div class="flex flex-col md:flex-row justify-between items-stretch gap-6">
                     
-                    <!-- Equipe Bleue -->
                     <div class="w-full md:w-5/12 bg-blue-900/30 p-6 rounded-xl border border-blue-500/30 text-center flex flex-col">
                         <h3 class="text-blue-400 font-bold mb-2">Équipe Bleue</h3>
                         <div id="displayTeamA" class="text-sm text-slate-300 mb-4 flex-grow"></div>
@@ -112,16 +109,13 @@
                         </div>
                     </div>
 
-                    <!-- Paris en cours (Centre) -->
                     <div class="w-full md:w-2/12 flex flex-col items-center justify-center border-x border-slate-700/50 px-2">
                         <div class="text-2xl font-black text-slate-600 italic mb-4">VS</div>
                         <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider text-center">Paris en cours</h4>
                         <div id="liveBets" class="w-full space-y-2 text-xs max-h-[300px] overflow-y-auto text-center">
-                            <!-- Rempli en JS -->
-                        </div>
+                            </div>
                     </div>
 
-                    <!-- Equipe Rouge -->
                     <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col">
                         <h3 class="text-red-400 font-bold mb-2">Équipe Rouge</h3>
                         <div id="displayTeamB" class="text-sm text-slate-300 mb-4 flex-grow"></div>
@@ -140,11 +134,20 @@
                 </div>
                 <button onclick="window.cancelMatch()" class="mt-6 w-full text-center text-sm text-red-500/50 hover:text-red-400 transition underline">Annuler ce match (Effacer les paris)</button>
             </div>
-
         </div>
     </div>
 
-    <!-- FIREBASE & LOGIQUE METIER -->
+    <div id="historyModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-lg w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Détails du Match</h3>
+                <button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
+            </div>
+            <div id="historyModalContent" class="space-y-4">
+                </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -163,13 +166,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Références Firebase
         const playersRef = ref(db, 'players');
         const draftRef = ref(db, 'draft');
         const activeMatchRef = ref(db, 'activeMatch');
         const historyRef = ref(db, 'history');
 
-        // Variables globales
         let players = [];
         let draftA = [];
         let draftB = [];
@@ -177,7 +178,7 @@
         let matchHistory = [];
 
         // -----------------------------------------
-        // ECOUTEURS FIREBASE (Temps Réel)
+        // ECOUTEURS FIREBASE
         // -----------------------------------------
 
         onValue(playersRef, (snapshot) => {
@@ -220,7 +221,7 @@
         });
 
         // -----------------------------------------
-        // ACTIONS (Poussées vers Firebase)
+        // ACTIONS (DRAFT & MATCH)
         // -----------------------------------------
 
         window.addPlayer = () => {
@@ -234,23 +235,9 @@
             set(draftRef, { teamA: draftA, teamB: draftB });
         }
 
-        window.moveToA = (id) => { 
-            draftA.push(id); 
-            draftB = draftB.filter(x => x !== id);
-            syncDraft(); 
-        };
-        
-        window.moveToB = (id) => { 
-            draftB.push(id); 
-            draftA = draftA.filter(x => x !== id);
-            syncDraft(); 
-        };
-        
-        window.removeFromDraft = (id) => { 
-            draftA = draftA.filter(x => x !== id);
-            draftB = draftB.filter(x => x !== id);
-            syncDraft(); 
-        };
+        window.moveToA = (id) => { draftA.push(id); draftB = draftB.filter(x => x !== id); syncDraft(); };
+        window.moveToB = (id) => { draftB.push(id); draftA = draftA.filter(x => x !== id); syncDraft(); };
+        window.removeFromDraft = (id) => { draftA = draftA.filter(x => x !== id); draftB = draftB.filter(x => x !== id); syncDraft(); };
 
         window.prepareMatch = () => {
             if (draftA.length === 0 || draftB.length === 0) {
@@ -274,7 +261,7 @@
                 oddsB: Math.min(1 / probB, 20).toFixed(2),
                 probA: probA,
                 probB: probB,
-                bets: []
+                bets: {} // Changé en objet pour correspondre à Firebase
             };
 
             set(activeMatchRef, newMatch).then(() => {
@@ -287,7 +274,7 @@
         };
 
         // -----------------------------------------
-        // SYSTEME DE PARIS (Manuels / Sans Compte)
+        // SYSTEME DE PARIS (Manuels)
         // -----------------------------------------
 
         window.placeBet = (team) => {
@@ -304,11 +291,9 @@
 
             if (isNaN(amount) || amount <= 0) { alert("Montant invalide."); return; }
 
-            // Réinitialiser les champs
             nameInput.value = '';
             amountInput.value = '';
 
-            // Envoi à Firebase
             const matchBetsRef = ref(db, 'activeMatch/bets');
             push(matchBetsRef, {
                 user: bettorName,
@@ -330,7 +315,7 @@
 
             const updates = {};
 
-            // 1. Mise à jour Elo des joueurs
+            // 1. Mise à jour Elo
             activeMatch.teamA.forEach(p => {
                 updates[`players/${p.id}/elo`] = p.elo + eloChangeA;
                 updates[`players/${p.id}/wins`] = scoreA === 1 ? p.wins + 1 : p.wins;
@@ -342,32 +327,110 @@
                 updates[`players/${p.id}/losses`] = scoreB === 0 ? p.losses + 1 : p.losses;
             });
 
-            // 2. Archivage dans l'historique
+            // 2. Archivage
             const historyEntry = {
                 timestamp: Date.now(),
                 teamA_names: activeMatch.teamA.map(p=>p.name).join(', '),
                 teamB_names: activeMatch.teamB.map(p=>p.name).join(', '),
                 oddsA: activeMatch.oddsA,
                 oddsB: activeMatch.oddsB,
-                winner: winnerStr
+                winner: winnerStr,
+                bets: activeMatch.bets || {} // On sauvegarde les paris ici !
             };
             const newHistoryRef = push(historyRef);
             updates[`history/${newHistoryRef.key}`] = historyEntry;
 
-            // 3. Suppression du match actif
+            // 3. Purge du match
             updates[`activeMatch`] = null;
 
             update(ref(db), updates);
         };
 
         // -----------------------------------------
-        // RENDU UI
+        // RESET GLOBAL
+        // -----------------------------------------
+
+        window.resetAllData = () => {
+            if(confirm("⚠️ ATTENTION : Voulez-vous vraiment effacer TOUS les joueurs, l'historique et la draft ? Cette action est irréversible.")) {
+                const securityCheck = prompt("Tapez 'RESET' (en majuscule) pour confirmer la suppression définitive :");
+                if (securityCheck === 'RESET') {
+                    set(ref(db), {
+                        players: null,
+                        draft: null,
+                        activeMatch: null,
+                        history: null
+                    }).then(() => {
+                        alert("Base de données vidée avec succès.");
+                    }).catch(e => alert("Erreur lors de la réinitialisation : " + e));
+                }
+            }
+        };
+
+        // -----------------------------------------
+        // GESTION MODALE HISTORIQUE
+        // -----------------------------------------
+
+        window.openHistoryModal = (matchData) => {
+            const content = document.getElementById('historyModalContent');
+            
+            // Formatage de la liste des paris
+            let betsHTML = '<div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré pour ce match.</div>';
+            
+            if (matchData.bets && Object.keys(matchData.bets).length > 0) {
+                betsHTML = '<div class="space-y-2 max-h-60 overflow-y-auto pr-2">';
+                Object.values(matchData.bets).forEach(bet => {
+                    const isTeamA = bet.team === 'A';
+                    const color = isTeamA ? 'text-blue-400' : 'text-red-400';
+                    const teamName = isTeamA ? 'Bleu' : 'Rouge';
+                    
+                    const isWinner = bet.team === matchData.winner;
+                    const statusIcon = isWinner ? '✅' : '❌';
+                    const gainText = isWinner ? `<span class="text-emerald-400 font-bold">+${bet.potentialWin.toFixed(0)}$</span>` : `<span class="text-slate-500 line-through">-${bet.amount}$</span>`;
+
+                    betsHTML += `
+                        <div class="bg-slate-900/80 p-3 rounded-lg flex justify-between items-center text-sm border border-slate-700/50">
+                            <div>
+                                <span class="font-bold text-white">${bet.user}</span> a misé 
+                                <span class="${color} font-bold">${bet.amount}$ sur ${teamName}</span>
+                            </div>
+                            <div class="flex items-center gap-2">${statusIcon} ${gainText}</div>
+                        </div>
+                    `;
+                });
+                betsHTML += '</div>';
+            }
+
+            // Construction du contenu de la modale
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-6 pb-6 border-b border-slate-700 text-center">
+                    <div class="w-5/12 ${matchData.winner === 'A' ? 'text-blue-400 font-bold' : 'text-slate-500'}">
+                        <div class="text-lg">${matchData.teamA_names}</div>
+                        <span class="text-xs">Cote x${matchData.oddsA}</span>
+                    </div>
+                    <div class="w-2/12 text-slate-600 font-black italic text-xl">VS</div>
+                    <div class="w-5/12 ${matchData.winner === 'B' ? 'text-red-400 font-bold' : 'text-slate-500'}">
+                        <div class="text-lg">${matchData.teamB_names}</div>
+                        <span class="text-xs">Cote x${matchData.oddsB}</span>
+                    </div>
+                </div>
+                <h4 class="font-semibold text-slate-300 mb-3 text-sm uppercase tracking-wider">Récapitulatif des paris</h4>
+                ${betsHTML}
+            `;
+            
+            document.getElementById('historyModal').classList.remove('hidden');
+        };
+
+        window.closeHistoryModal = () => {
+            document.getElementById('historyModal').classList.add('hidden');
+        };
+
+        // -----------------------------------------
+        // RENDU UI GENERAL
         // -----------------------------------------
 
         function renderActiveMatch() {
             if (!activeMatch) return;
             
-            // Textes & Cotes
             document.getElementById('displayTeamA').innerText = activeMatch.teamA.map(p=>p.name).join(' & ');
             document.getElementById('displayTeamB').innerText = activeMatch.teamB.map(p=>p.name).join(' & ');
             document.getElementById('oddsA').innerText = `x${activeMatch.oddsA}`;
@@ -375,7 +438,6 @@
             document.getElementById('winProbA').innerText = `${(activeMatch.probA * 100).toFixed(0)}% chance`;
             document.getElementById('winProbB').innerText = `${(activeMatch.probB * 100).toFixed(0)}% chance`;
 
-            // Affichage des paris en direct
             const betsContainer = document.getElementById('liveBets');
             betsContainer.innerHTML = '';
             
@@ -384,9 +446,7 @@
                     const div = document.createElement('div');
                     const color = bet.team === 'A' ? 'text-blue-400' : 'text-red-400';
                     div.className = "bg-slate-900/50 p-1.5 rounded border border-slate-700/50 text-left mb-1";
-                    
                     const teamName = bet.team === 'A' ? 'Bleu' : 'Rouge';
-                    // Gain potentiel calculé pour affichage direct
                     const gain = bet.potentialWin.toFixed(0);
                     
                     div.innerHTML = `
@@ -484,10 +544,14 @@
                 return;
             }
 
-            matchHistory.slice(0, 5).forEach(m => {
+            matchHistory.forEach(m => {
                 const isAWin = m.winner === 'A';
                 const li = document.createElement('li');
-                li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50";
+                // Ajout des styles pour rendre cliquable (cursor-pointer, hover)
+                li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm";
+                
+                // On passe l'objet du match à la fonction d'ouverture de la modale
+                li.onclick = () => window.openHistoryModal(m);
                 
                 li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
@@ -495,8 +559,9 @@
                         <span class="text-xs text-slate-600 font-bold">VS</span>
                         <span class="${!isAWin ? 'text-red-400 font-bold' : 'text-slate-500 line-through'} text-right truncate w-5/12">${m.teamB_names}</span>
                     </div>
-                    <div class="flex justify-between text-[10px] text-slate-400 mt-2 bg-slate-800 px-2 py-1 rounded">
+                    <div class="flex justify-between text-[10px] text-slate-400 mt-2 bg-slate-800 px-2 py-1 rounded items-center">
                         <span>Cote: x${m.oddsA}</span>
+                        <span class="text-slate-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Détails</span>
                         <span>Cote: x${m.oddsB}</span>
                     </div>
                 `;
