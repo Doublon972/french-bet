@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Dashboard - Gestion Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        accent: '#3b82f6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar pour un look pro */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-dark text-slate-200 min-h-screen font-sans selection:bg-accent selection:text-white pb-10">
+
+    <!-- Header -->
+    <header class="bg-card border-b border-slate-800 shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-trophy text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-white">La<span class="text-blue-500">French</span></h1>
+            </div>
+            <button onclick="resetData()" class="text-sm text-slate-400 hover:text-red-400 transition flex items-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Colonne Gauche : Gestion des Joueurs (Roster) -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Carte : Ajouter -->
+            <div class="bg-card rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
+                <div class="p-5 border-b border-slate-700/50 bg-slate-800/20">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-white">
+                        <i class="fa-solid fa-user-plus text-emerald-400"></i> Nouveau Joueur
+                    </h2>
+                </div>
+                <div class="p-5">
+                    <form onsubmit="addPlayer(event)" class="flex gap-3">
+                        <input type="text" id="playerName" placeholder="Nom ou Pseudo..." autocomplete="off"
+                            class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition placeholder-slate-500">
+                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-medium transition shadow-lg shadow-emerald-500/20">
+                            Ajouter
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Carte : Classement -->
+            <div class="bg-card rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-[500px]">
+                <div class="p-5 border-b border-slate-700/50 bg-slate-800/20 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-white">
+                        <i class="fa-solid fa-ranking-star text-yellow-400"></i> Classement Elo
+                    </h2>
+                    <span class="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full" id="playerCount">0 Joueurs</span>
+                </div>
+                <div class="p-2 flex-1 overflow-y-auto" id="leaderboard">
+                    <!-- Liste générée en JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Colonne Droite : L'Arène (Création et Match) -->
+        <div class="lg:col-span-8 space-y-6">
+            
+            <!-- CONTENEUR DRAFT (Création de Match) -->
+            <div id="draftSection" class="bg-card rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
+                <div class="p-5 border-b border-slate-700/50 bg-slate-800/20">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-white">
+                        <i class="fa-solid fa-people-group text-blue-400"></i> Salle de Draft
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-1">Assignez les joueurs dans les équipes pour préparer le match.</p>
+                </div>
+                
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <!-- Équipe Bleue (A) -->
+                        <div class="bg-slate-900/50 rounded-xl p-4 border border-blue-900/30">
+                            <h3 class="text-blue-400 font-semibold mb-3 flex items-center gap-2 border-b border-slate-700 pb-2">
+                                <div class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                                Équipe Bleue
+                            </h3>
+                            <div id="teamAList" class="space-y-2 min-h-[150px]"></div>
+                        </div>
+
+                        <!-- Joueurs Disponibles -->
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 shadow-inner">
+                            <h3 class="text-slate-300 font-semibold text-center mb-3 text-sm uppercase tracking-wider">Disponibles</h3>
+                            <div id="availablePlayersList" class="space-y-2 max-h-[300px] overflow-y-auto pr-1"></div>
+                        </div>
+
+                        <!-- Équipe Rouge (B) -->
+                        <div class="bg-slate-900/50 rounded-xl p-4 border border-red-900/30">
+                            <h3 class="text-red-400 font-semibold mb-3 flex items-center justify-end gap-2 border-b border-slate-700 pb-2">
+                                Équipe Rouge
+                                <div class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                            </h3>
+                            <div id="teamBList" class="space-y-2 min-h-[150px]"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 text-center">
+                        <button onclick="startMatch()" id="startMatchBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/25 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Analyser les Cotes & Lancer le Match
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENEUR MATCH ACTIF (Résultats) -->
+            <div id="activeMatchSection" class="hidden bg-card rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden fade-in">
+                <div class="p-5 border-b border-slate-700/50 bg-slate-800/20 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-white">
+                        <i class="fa-solid fa-gamepad text-purple-400"></i> Match en cours
+                    </h2>
+                    <button onclick="cancelMatch()" class="text-xs text-slate-400 hover:text-white transition bg-slate-700 px-3 py-1.5 rounded-lg">Annuler</button>
+                </div>
+                
+                <div class="p-8">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-8 relative">
+                        
+                        <!-- VS Badge (Absolu au centre pour Desktop) -->
+                        <div class="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-slate-900 rounded-full items-center justify-center font-black text-slate-500 border-2 border-slate-700 z-10">VS</div>
+
+                        <!-- Card Equipe A -->
+                        <div class="w-full md:w-5/12 bg-gradient-to-b from-blue-900/40 to-slate-900 rounded-2xl p-6 border border-blue-500/20 text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                            <h3 class="text-xl font-bold text-blue-400 mb-2">Équipe Bleue</h3>
+                            <div id="activeTeamA" class="text-sm text-slate-300 min-h-[40px] mb-4"></div>
+                            <div class="bg-slate-900/80 rounded-lg py-3 mb-6 border border-slate-700/50">
+                                <span class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Cote</span>
+                                <span class="text-4xl font-black text-yellow-400" id="oddsA">x1.00</span>
+                            </div>
+                            <button onclick="resolveMatch('A')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-600/30">
+                                Victoire Bleue
+                            </button>
+                        </div>
+
+                        <!-- Card Equipe B -->
+                        <div class="w-full md:w-5/12 bg-gradient-to-b from-red-900/40 to-slate-900 rounded-2xl p-6 border border-red-500/20 text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                            <h3 class="text-xl font-bold text-red-400 mb-2">Équipe Rouge</h3>
+                            <div id="activeTeamB" class="text-sm text-slate-300 min-h-[40px] mb-4"></div>
+                            <div class="bg-slate-900/80 rounded-lg py-3 mb-6 border border-slate-700/50">
+                                <span class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Cote</span>
+                                <span class="text-4xl font-black text-yellow-400" id="oddsB">x1.00</span>
+                            </div>
+                            <button onclick="resolveMatch('B')" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-600/30">
+                                Victoire Rouge
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- ETAT DE L'APPLICATION ---
+        let players = JSON.parse(localStorage.getItem('arena_pro_players')) || [];
+        let draftTeamA = [];
+        let draftTeamB = [];
+        let currentMatch = null;
+
+        // Générateur d'initiales pour l'avatar
+        const getInitials = (name) => name.substring(0, 2).toUpperCase();
+
+        // Sauvegarde locale
+        const saveData = () => {
+            localStorage.setItem('arena_pro_players', JSON.stringify(players));
+            renderAll();
+        };
+
+        // --- 1. GESTION DES JOUEURS ---
+        function addPlayer(e) {
+            e.preventDefault();
+            const input = document.getElementById('playerName');
+            const name = input.value.trim();
+            if (!name) return;
+
+            players.push({
+                id: Date.now().toString(),
+                name: name,
+                elo: 1000,
+                wins: 0,
+                losses: 0
+            });
+            input.value = '';
+            saveData();
+        }
+
+        function resetData() {
+            if(confirm("Attention, cette action supprimera tous les joueurs et l'historique. Continuer ?")) {
+                localStorage.removeItem('arena_pro_players');
+                players = [];
+                draftTeamA = [];
+                draftTeamB = [];
+                currentMatch = null;
+                showDraftSection();
+                renderAll();
+            }
+        }
+
+        // --- 2. LOGIQUE DE MATCH ET ELO ---
+        function getWinProbability(elo1, elo2) {
+            return 1 / (1 + Math.pow(10, (elo2 - elo1) / 400));
+        }
+
+        function calculateTeamElo(teamIds) {
+            if (teamIds.length === 0) return 0;
+            const teamPlayers = players.filter(p => teamIds.includes(p.id));
+            return teamPlayers.reduce((sum, p) => sum + p.elo, 0) / teamPlayers.length;
+        }
+
+        function getPlayerById(id) {
+            return players.find(p => p.id === id);
+        }
+
+        // --- 3. GESTION DE LA DRAFT ---
+        function assignToTeam(playerId, team) {
+            if (team === 'A') draftTeamA.push(playerId);
+            if (team === 'B') draftTeamB.push(playerId);
+            renderDraftRoom();
+        }
+
+        function removeFromTeam(playerId, team) {
+            if (team === 'A') draftTeamA = draftTeamA.filter(id => id !== playerId);
+            if (team === 'B') draftTeamB = draftTeamB.filter(id => id !== playerId);
+            renderDraftRoom();
+        }
+
+        function startMatch() {
+            if (draftTeamA.length === 0 || draftTeamB.length === 0) return;
+
+            const eloA = calculateTeamElo(draftTeamA);
+            const eloB = calculateTeamElo(draftTeamB);
+
+            const probA = getWinProbability(eloA, eloB);
+            const probB = 1 - probA;
+
+            // Cap les cotes entre 1.01 et 99.99 pour l'affichage
+            const oddsA = Math.min(Math.max(1 / probA, 1.01), 99.99).toFixed(2);
+            const oddsB = Math.min(Math.max(1 / probB, 1.01), 99.99).toFixed(2);
+
+            currentMatch = { 
+                teamA: [...draftTeamA], 
+                teamB: [...draftTeamB], 
+                probA, 
+                probB 
+            };
+
+            // Mise à jour de l'UI du match
+            document.getElementById('activeTeamA').innerHTML = draftTeamA.map(id => getPlayerById(id).name).join('<br>');
+            document.getElementById('activeTeamB').innerHTML = draftTeamB.map(id => getPlayerById(id).name).join('<br>');
+            document.getElementById('oddsA').innerText = `x${oddsA}`;
+            document.getElementById('oddsB').innerText = `x${oddsB}`;
+
+            // Basculer l'affichage
+            document.getElementById('draftSection').classList.add('hidden');
+            document.getElementById('activeMatchSection').classList.remove('hidden');
+        }
+
+        function cancelMatch() {
+            currentMatch = null;
+            showDraftSection();
+        }
+
+        function resolveMatch(winnerStr) {
+            if (!currentMatch) return;
+
+            const K = 32;
+            const { teamA, teamB, probA, probB } = currentMatch;
+            const scoreA = winnerStr === 'A' ? 1 : 0;
+            const scoreB = winnerStr === 'B' ? 1 : 0;
+
+            const eloChangeA = K * (scoreA - probA);
+            const eloChangeB = K * (scoreB - probB);
+
+            // Appliquer les changements
+            players.forEach(p => {
+                if (teamA.includes(p.id)) {
+                    p.elo += eloChangeA;
+                    if (scoreA === 1) p.wins++; else p.losses++;
+                }
+                if (teamB.includes(p.id)) {
+                    p.elo += eloChangeB;
+                    if (scoreB === 1) p.wins++; else p.losses++;
+                }
+            });
+
+            // Reset
+            currentMatch = null;
+            draftTeamA = [];
+            draftTeamB = [];
+            
+            saveData();
+            showDraftSection();
+        }
+
+        function showDraftSection() {
+            document.getElementById('draftSection').classList.remove('hidden');
+            document.getElementById('activeMatchSection').classList.add('hidden');
+        }
+
+        // --- 4. MOTEUR DE RENDU UI ---
+        function renderAll() {
+            // Tri global par Elo pour le leaderboard
+            players.sort((a, b) => b.elo - a.elo);
+            
+            renderLeaderboard();
+            renderDraftRoom();
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard');
+            document.getElementById('playerCount').innerText = `${players.length} Joueur${players.length > 1 ? 's' : ''}`;
+            list.innerHTML = '';
+
+            if(players.length === 0) {
+                list.innerHTML = `<div class="text-center text-slate-500 py-10 text-sm">Aucun joueur enregistré.</div>`;
+                return;
+            }
+
+            players.forEach((p, index) => {
+                // Couleurs du Top 3
+                let rankColor = "text-slate-500";
+                if(index === 0) rankColor = "text-yellow-400";
+                if(index === 1) rankColor = "text-slate-300";
+                if(index === 2) rankColor = "text-orange-400";
+
+                const winrate = (p.wins + p.losses) > 0 ? Math.round((p.wins / (p.wins + p.losses)) * 100) : 0;
+
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-3 hover:bg-slate-800 rounded-xl transition border-b border-slate-800/50 last:border-0 fade-in">
+                        <div class="flex items-center gap-3">
+                            <div class="w-6 text-center font-bold ${rankColor}">#${index + 1}</div>
+                            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                ${getInitials(p.name)}
+                            </div>
+                            <div>
+                                <div class="font-medium text-slate-200 text-sm">${p.name}</div>
+                                <div class="text-xs text-slate-500">${p.wins}V - ${p.losses}D (${winrate}%)</div>
+                            </div>
+                        </div>
+                        <div class="font-black text-emerald-400 text-sm">
+                            ${Math.round(p.elo)}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDraftRoom() {
+            const availableList = document.getElementById('availablePlayersList');
+            const teamAList = document.getElementById('teamAList');
+            const teamBList = document.getElementById('teamBList');
+            
+            availableList.innerHTML = '';
+            teamAList.innerHTML = '';
+            teamBList.innerHTML = '';
+
+            // Filtrer les joueurs dispo (triés alphabétiquement dans la draft c'est plus simple pour chercher)
+            const availablePlayers = [...players]
+                .filter(p => !draftTeamA.includes(p.id) && !draftTeamB.includes(p.id))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            if(availablePlayers.length === 0 && players.length > 0) {
+                availableList.innerHTML = `<div class="text-center text-slate-500 py-4 text-xs">Tous les joueurs sont assignés.</div>`;
+            } else if (players.length === 0) {
+                availableList.innerHTML = `<div class="text-center text-slate-500 py-4 text-xs">Ajoutez des joueurs pour commencer.</div>`;
+            }
+
+            // Affichage Disponibles
+            availablePlayers.forEach(p => {
+                availableList.innerHTML += `
+                    <div class="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition group fade-in border border-slate-600/30">
+                        <span class="text-sm font-medium pl-2 truncate">${p.name}</span>
+                        <div class="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="assignToTeam('${p.id}', 'A')" title="Ajouter équipe Bleue" class="w-8 h-8 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition flex items-center justify-center">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <button onclick="assignToTeam('${p.id}', 'B')" title="Ajouter équipe Rouge" class="w-8 h-8 rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition flex items-center justify-center">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Affichage Equipe A
+            if(draftTeamA.length === 0) teamAList.innerHTML = `<div class="text-center text-slate-600 text-xs py-4">Équipe vide</div>`;
+            draftTeamA.forEach(id => {
+                const p = getPlayerById(id);
+                teamAList.innerHTML += `
+                    <div class="flex items-center justify-between p-2 bg-blue-900/40 rounded-lg border border-blue-500/20 fade-in">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-blue-800 flex items-center justify-center text-[10px] font-bold text-blue-200">${getInitials(p.name)}</div>
+                            <span class="text-sm text-blue-100">${p.name}</span>
+                        </div>
+                        <button onclick="removeFromTeam('${p.id}', 'A')" class="text-blue-400 hover:text-white transition px-2">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+            });
+
+            // Affichage Equipe B
+            if(draftTeamB.length === 0) teamBList.innerHTML = `<div class="text-center text-slate-600 text-xs py-4">Équipe vide</div>`;
+            draftTeamB.forEach(id => {
+                const p = getPlayerById(id);
+                teamBList.innerHTML += `
+                    <div class="flex items-center justify-between p-2 bg-red-900/40 rounded-lg border border-red-500/20 fade-in">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-red-800 flex items-center justify-center text-[10px] font-bold text-red-200">${getInitials(p.name)}</div>
+                            <span class="text-sm text-red-100">${p.name}</span>
+                        </div>
+                        <button onclick="removeFromTeam('${p.id}', 'B')" class="text-red-400 hover:text-white transition px-2">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+            });
+
+            // Gérer l'état du bouton Start Match
+            const btn = document.getElementById('startMatchBtn');
+            if(draftTeamA.length > 0 && draftTeamB.length > 0) {
+                btn.removeAttribute('disabled');
+            } else {
+                btn.setAttribute('disabled', 'true');
+            }
+        }
+
+        // Init
+        renderAll();
+    </script>
+</body>
+</html>
