@@ -17,7 +17,6 @@
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
 
-    <!-- HEADER -->
     <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
         
         <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
@@ -26,20 +25,33 @@
         </h1>
         
         <div class="flex flex-wrap gap-3 items-center justify-center md:justify-end">
-            <!-- Banque PnL -->
-            <div id="adminPnlDisplay" class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
+            <!-- Banque PnL (Admin) -->
+            <div id="adminPnlDisplay" class="admin-only hidden bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
                 Banque : <span class="text-slate-400 font-black">0$</span>
             </div>
 
-            <!-- Bouton Paramètres -->
-            <button onclick="window.openSettingsModal()" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-4 py-2 rounded-xl transition text-sm flex items-center gap-2 shadow-lg">
+            <!-- Badge de Statut -->
+            <div id="statusBadge" class="bg-slate-800 border border-slate-600 px-4 py-1.5 rounded-full text-xs font-bold text-slate-400">
+                Mode Spectateur
+            </div>
+
+            <!-- Bouton Paramètres (Admin) -->
+            <button onclick="window.openSettingsModal()" class="admin-only hidden bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-4 py-2 rounded-xl transition text-sm flex items-center gap-2 shadow-lg">
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Paramètres
             </button>
 
-            <!-- Bouton Reset -->
-            <button onclick="window.resetAllData()" class="bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold flex items-center gap-2">
+            <!-- Bouton Reset (Admin) -->
+            <button onclick="window.resetAllData()" class="admin-only hidden bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold flex items-center gap-2">
                 ⚠ Reset Data
+            </button>
+
+            <!-- Boutons de Connexion / Déconnexion -->
+            <button onclick="window.openLoginModal()" class="guest-only bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl transition text-sm font-bold flex items-center gap-2">
+                Connexion Admin
+            </button>
+            <button onclick="window.logoutAdmin()" class="admin-only hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition text-sm font-bold flex items-center gap-2">
+                Déconnexion
             </button>
         </div>
     </div>
@@ -49,7 +61,8 @@
         
         <div class="lg:col-span-1 space-y-6">
             
-            <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+            <!-- Création Combattant (Admin Uniquement) -->
+            <div class="admin-only hidden bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm fade-in">
                 <h2 class="text-lg font-semibold mb-4 text-emerald-400 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                     Nouveau Combattant
@@ -60,11 +73,13 @@
                 </div>
             </div>
 
+            <!-- Classement (Visible Tous) -->
             <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
                 <h2 class="text-lg font-semibold mb-4 text-white">🏆 Classement</h2>
                 <ul id="leaderboard" class="space-y-3 max-h-[300px] overflow-y-auto pr-2"></ul>
             </div>
 
+            <!-- Historique (Visible Tous) -->
             <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
                 <h2 class="text-lg font-semibold mb-4 text-white">📜 Historique (Cliquable)</h2>
                 <ul id="historyList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 text-sm"></ul>
@@ -73,13 +88,14 @@
 
         <div class="lg:col-span-2 space-y-6">
             
+            <!-- Section Draft -->
             <div id="draftSection" class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm transition-all">
                 <h2 class="text-xl font-bold mb-6 text-center text-white flex justify-center items-center gap-3">
                     <span class="relative flex h-3 w-3">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                     </span>
-                    Draft
+                    Draft Synchronisée
                 </h2>
                 
                 <div class="grid grid-cols-3 gap-4 text-sm font-medium text-slate-400 mb-2 text-center">
@@ -89,23 +105,25 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-4 h-[300px]">
-                    <!-- Ajout des événements drag & drop sur les conteneurs -->
                     <div id="draftTeamA" ondragover="event.preventDefault()" ondrop="window.handleDrop(event, 'A')" class="bg-blue-900/20 border-2 border-dashed border-blue-500/30 rounded-xl p-3 overflow-y-auto space-y-2 h-full"></div>
                     <div id="draftAvailable" ondragover="event.preventDefault()" ondrop="window.handleDrop(event, 'Available')" class="bg-slate-900/50 border border-slate-700 rounded-xl p-3 overflow-y-auto space-y-2 h-full"></div>
                     <div id="draftTeamB" ondragover="event.preventDefault()" ondrop="window.handleDrop(event, 'B')" class="bg-red-900/20 border-2 border-dashed border-red-500/30 rounded-xl p-3 overflow-y-auto space-y-2 h-full"></div>
                 </div>
 
-                <div class="mt-6 text-center">
+                <!-- Bouton Verrouiller Draft (Admin Uniquement) -->
+                <div class="admin-only hidden mt-6 text-center fade-in">
                     <button onclick="window.prepareMatch()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-indigo-500/30 w-full md:w-auto">
                         Verrouiller & Créer le Match
                     </button>
                 </div>
             </div>
 
+            <!-- Section Match -->
             <div id="matchSection" class="hidden bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm fade-in">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-white mb-2">🔥 MATCH EN COURS 🔥</h2>
-                    <p class="text-sm text-slate-400">Ajoutez les paris manuellement ci-dessous.</p>
+                    <p class="text-sm text-slate-400 guest-only">Le combat a commencé. Paris fermés pour les spectateurs.</p>
+                    <p class="text-sm text-slate-400 admin-only hidden">Ajoutez les paris manuellement ci-dessous.</p>
                 </div>
 
                 <div class="flex flex-col md:flex-row justify-between items-stretch gap-6">
@@ -116,7 +134,8 @@
                         <div class="text-4xl font-black text-white mb-1" id="oddsA">x1.00</div>
                         <div class="text-xs text-blue-400 mb-4" id="winProbA">50% chance</div>
                         
-                        <div class="mt-auto space-y-2 border-t border-blue-500/30 pt-4">
+                        <!-- Inputs de Pari (Admin Uniquement) -->
+                        <div class="admin-only hidden mt-auto space-y-2 border-t border-blue-500/30 pt-4 fade-in">
                             <input type="text" id="betNameA" placeholder="Nom (ex: Pari 1)" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-blue-500/50 text-sm">
                             <input type="number" id="betAmountA" placeholder="Mise $" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-blue-500/50">
                             <button onclick="window.placeBet('A')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-bold transition">Ajouter Pari Bleu</button>
@@ -139,7 +158,8 @@
                         <div class="text-4xl font-black text-white mb-1" id="oddsB">x1.00</div>
                         <div class="text-xs text-red-400 mb-4" id="winProbB">50% chance</div>
                         
-                        <div class="mt-auto space-y-2 border-t border-red-500/30 pt-4">
+                        <!-- Inputs de Pari (Admin Uniquement) -->
+                        <div class="admin-only hidden mt-auto space-y-2 border-t border-red-500/30 pt-4 fade-in">
                             <input type="text" id="betNameB" placeholder="Nom (ex: Pari 2)" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-red-500/50 text-sm">
                             <input type="number" id="betAmountB" placeholder="Mise $" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-red-500/50">
                             <button onclick="window.placeBet('B')" class="w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg font-bold transition">Ajouter Pari Rouge</button>
@@ -149,8 +169,26 @@
                     </div>
 
                 </div>
-                <button onclick="window.cancelMatch()" class="mt-6 w-full text-center text-sm text-red-500/50 hover:text-red-400 transition underline">Annuler ce match (Effacer les paris)</button>
+                <!-- Bouton Annuler Match (Admin Uniquement) -->
+                <button onclick="window.cancelMatch()" class="admin-only hidden mt-6 w-full text-center text-sm text-red-500/50 hover:text-red-400 transition underline fade-in">Annuler ce match (Effacer les paris)</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODALE LOGIN (NOUVEAU) -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+        <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+            <h3 class="text-2xl font-bold text-white mb-6">Espace Administrateur</h3>
+            
+            <div class="space-y-4">
+                <input type="text" id="loginId" placeholder="Identifiant" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:border-indigo-500 focus:outline-none">
+                <input type="password" id="loginPw" placeholder="Mot de passe" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:border-indigo-500 focus:outline-none">
+                
+                <p id="loginError" class="hidden text-red-400 text-sm font-bold">Identifiants incorrects.</p>
+                
+                <button onclick="window.attemptLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition shadow-lg mt-4">Connexion</button>
+            </div>
+            <button onclick="window.closeLoginModal()" class="mt-6 text-sm text-slate-500 hover:text-white underline">Fermer</button>
         </div>
     </div>
 
@@ -161,9 +199,7 @@
                 <h3 class="text-xl font-bold text-white">Détails du Match</h3>
                 <button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
             </div>
-            <div id="historyModalContent" class="space-y-4">
-                <!-- Rempli en JS -->
-            </div>
+            <div id="historyModalContent" class="space-y-4"></div>
         </div>
     </div>
 
@@ -251,6 +287,72 @@
         };
 
         // -----------------------------------------
+        // SYSTEME D'AUTHENTIFICATION
+        // -----------------------------------------
+        
+        let isAdmin = localStorage.getItem('arena_admin') === 'true';
+
+        function updateAdminUI() {
+            const adminElements = document.querySelectorAll('.admin-only');
+            const guestElements = document.querySelectorAll('.guest-only');
+            const badge = document.getElementById('statusBadge');
+
+            adminElements.forEach(el => {
+                if (isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            guestElements.forEach(el => {
+                if (!isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            if(isAdmin) {
+                badge.className = "bg-indigo-900/50 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-300";
+                badge.innerText = "Mode Administrateur";
+            } else {
+                badge.className = "bg-slate-800 border border-slate-600 px-4 py-1.5 rounded-full text-xs font-bold text-slate-400";
+                badge.innerText = "Mode Spectateur";
+            }
+
+            renderDraftUI(); // Re-render draft pour activer/désactiver le drag & drop
+        }
+
+        window.openLoginModal = () => {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginId').value = '';
+            document.getElementById('loginPw').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+        };
+
+        window.closeLoginModal = () => {
+            document.getElementById('loginModal').classList.add('hidden');
+        };
+
+        window.attemptLogin = () => {
+            const id = document.getElementById('loginId').value;
+            const pw = document.getElementById('loginPw').value;
+
+            if (id === 'lafrench' && pw === 'lafrench123') {
+                isAdmin = true;
+                localStorage.setItem('arena_admin', 'true');
+                window.closeLoginModal();
+                updateAdminUI();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        };
+
+        window.logoutAdmin = () => {
+            isAdmin = false;
+            localStorage.removeItem('arena_admin');
+            updateAdminUI();
+        };
+
+        // Initialisation de l'UI
+        updateAdminUI();
+
+        // -----------------------------------------
         // ECOUTEURS FIREBASE
         // -----------------------------------------
 
@@ -311,6 +413,7 @@
         // -----------------------------------------
 
         window.addPlayer = () => {
+            if(!isAdmin) return;
             const nameInput = document.getElementById('playerName');
             if (nameInput.value.trim() === '') return;
             
@@ -324,36 +427,36 @@
         };
 
         function syncDraft() {
+            if(!isAdmin) return;
             set(draftRef, { teamA: draftA, teamB: draftB });
         }
 
-        // NOUVEAU : Logique Drag & Drop
         window.handleDragStart = (event, playerId) => {
+            if(!isAdmin) return;
             event.dataTransfer.setData('text/plain', playerId);
             event.dataTransfer.effectAllowed = 'move';
         };
 
         window.handleDrop = (event, targetContainer) => {
+            if(!isAdmin) return;
             event.preventDefault();
             const playerId = event.dataTransfer.getData('text/plain');
             if (!playerId) return;
 
-            // Retirer de toutes les équipes
             draftA = draftA.filter(x => x !== playerId);
             draftB = draftB.filter(x => x !== playerId);
 
-            // Ajouter dans la nouvelle équipe
             if (targetContainer === 'A') {
                 draftA.push(playerId);
             } else if (targetContainer === 'B') {
                 draftB.push(playerId);
             }
-            // Si 'Available', le joueur reste retiré de draftA et draftB
 
             syncDraft();
         };
 
         window.prepareMatch = () => {
+            if(!isAdmin) return;
             if (draftA.length === 0 || draftB.length === 0) {
                 alert("Il faut au moins un joueur dans chaque équipe !");
                 return;
@@ -386,6 +489,7 @@
         };
 
         window.cancelMatch = () => {
+            if(!isAdmin) return;
             set(activeMatchRef, null);
         };
 
@@ -394,6 +498,7 @@
         // -----------------------------------------
 
         window.openSettingsModal = () => {
+            if(!isAdmin) return;
             document.getElementById('setBaseElo').value = appSettings.baseElo;
             document.getElementById('setKWin').value = appSettings.kWin;
             document.getElementById('setKLoss').value = appSettings.kLoss;
@@ -406,6 +511,7 @@
         };
 
         window.saveSettings = () => {
+            if(!isAdmin) return;
             const newSettings = {
                 baseElo: Number(document.getElementById('setBaseElo').value) || 1000,
                 kWin: Number(document.getElementById('setKWin').value) || 32,
@@ -418,11 +524,11 @@
         };
 
         // -----------------------------------------
-        // SYSTEME DE PARIS (Manuels)
+        // SYSTEME DE PARIS
         // -----------------------------------------
 
         window.placeBet = (team) => {
-            if (!activeMatch) return;
+            if (!activeMatch || !isAdmin) return;
             
             const nameId = team === 'A' ? 'betNameA' : 'betNameB';
             const amountId = team === 'A' ? 'betAmountA' : 'betAmountB';
@@ -448,7 +554,7 @@
         };
 
         window.resolveMatch = (winnerStr) => {
-            if (!activeMatch) return;
+            if (!activeMatch || !isAdmin) return;
             if(!confirm(`Confirmer la victoire de l'équipe ${winnerStr === 'A' ? 'Bleue' : 'Rouge'} ?`)) return;
 
             const eloChangeA_win = appSettings.kWin * (1 - activeMatch.probA);
@@ -490,11 +596,8 @@
             update(ref(db), updates);
         };
 
-        // -----------------------------------------
-        // RESET GLOBAL
-        // -----------------------------------------
-
         window.resetAllData = () => {
+            if(!isAdmin) return;
             if(confirm("⚠️ ATTENTION : Voulez-vous vraiment effacer TOUS les joueurs, l'historique et la draft ? Cette action est irréversible.")) {
                 const securityCheck = prompt("Tapez 'RESET' (en majuscule) pour confirmer la suppression définitive :");
                 if (securityCheck === 'RESET') {
@@ -512,7 +615,7 @@
         };
 
         // -----------------------------------------
-        // CALCUL DES BÉNÉFICES (MAISON)
+        // CALCUL DES BÉNÉFICES ET RENDUS UI
         // -----------------------------------------
 
         function calculateAndRenderPnL() {
@@ -540,13 +643,8 @@
             }
         }
 
-        // -----------------------------------------
-        // GESTION MODALE HISTORIQUE
-        // -----------------------------------------
-
         window.openHistoryModal = (matchData) => {
             const content = document.getElementById('historyModalContent');
-            
             let betsHTML = '<div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré pour ce match.</div>';
             
             if (matchData.bets && Object.keys(matchData.bets).length > 0) {
@@ -588,17 +686,12 @@
                 <h4 class="font-semibold text-slate-300 mb-3 text-sm uppercase tracking-wider">Récapitulatif des paris</h4>
                 ${betsHTML}
             `;
-            
             document.getElementById('historyModal').classList.remove('hidden');
         };
 
         window.closeHistoryModal = () => {
             document.getElementById('historyModal').classList.add('hidden');
         };
-
-        // -----------------------------------------
-        // RENDU UI GENERAL
-        // -----------------------------------------
 
         function renderActiveMatch() {
             if (!activeMatch) return;
@@ -636,15 +729,21 @@
         function createPlayerCard(p) {
             const div = document.createElement('div');
             
-            // Propriétés du Drag and Drop (Nouveau design de la carte)
-            div.draggable = true;
-            div.ondragstart = (event) => window.handleDragStart(event, p.id);
-            
-            // Curseur adapté pour indiquer qu'on peut glisser l'élément
-            div.className = "flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-500 transition group";
+            div.draggable = isAdmin;
+            if (isAdmin) {
+                div.ondragstart = (event) => window.handleDragStart(event, p.id);
+                div.className = "flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-500 transition group";
+            } else {
+                div.className = "flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-default";
+            }
             
             const initials = p.name.substring(0, 2).toUpperCase();
             
+            let grabIcon = isAdmin ? `
+                <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </div>` : '';
+
             div.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">${initials}</div>
@@ -653,9 +752,7 @@
                         <div class="text-xs text-slate-400">⭐ ${Math.round(p.elo)}</div>
                     </div>
                 </div>
-                <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </div>
+                ${grabIcon}
             `;
             return div;
         }
