@@ -17,6 +17,7 @@
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
 
+    <!-- HEADER -->
     <div class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
         
         <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
@@ -25,21 +26,25 @@
         </h1>
         
         <div class="flex flex-wrap gap-3 items-center justify-center md:justify-end">
+            <!-- Banque PnL -->
             <div id="adminPnlDisplay" class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
                 Banque : <span class="text-slate-400 font-black">0$</span>
             </div>
 
+            <!-- Bouton Paramètres -->
             <button onclick="window.openSettingsModal()" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-4 py-2 rounded-xl transition text-sm flex items-center gap-2 shadow-lg">
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Paramètres
             </button>
 
+            <!-- Bouton Reset -->
             <button onclick="window.resetAllData()" class="bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold flex items-center gap-2">
                 ⚠ Reset Data
             </button>
         </div>
     </div>
 
+    <!-- MAIN GRID -->
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-1 space-y-6">
@@ -74,7 +79,7 @@
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                     </span>
-                    Draft Synchronisée
+                    Draft Synchronisée (Glisser-Déposer)
                 </h2>
                 
                 <div class="grid grid-cols-3 gap-4 text-sm font-medium text-slate-400 mb-2 text-center">
@@ -84,9 +89,10 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-4 h-[300px]">
-                    <div id="draftTeamA" class="bg-blue-900/20 border-2 border-dashed border-blue-500/30 rounded-xl p-3 overflow-y-auto space-y-2"></div>
-                    <div id="draftAvailable" class="bg-slate-900/50 border border-slate-700 rounded-xl p-3 overflow-y-auto space-y-2"></div>
-                    <div id="draftTeamB" class="bg-red-900/20 border-2 border-dashed border-red-500/30 rounded-xl p-3 overflow-y-auto space-y-2"></div>
+                    <!-- Ajout des événements drag & drop sur les conteneurs -->
+                    <div id="draftTeamA" ondragover="event.preventDefault()" ondrop="window.handleDrop(event, 'A')" class="bg-blue-900/20 border-2 border-dashed border-blue-500/30 rounded-xl p-3 overflow-y-auto space-y-2 h-full"></div>
+                    <div id="draftAvailable" ondragover="event.preventDefault()" ondrop="window.handleDrop(event, 'Available')" class="bg-slate-900/50 border border-slate-700 rounded-xl p-3 overflow-y-auto space-y-2 h-full"></div>
+                    <div id="draftTeamB" ondragover="event.preventDefault()" ondrop="window.handleDrop(event, 'B')" class="bg-red-900/20 border-2 border-dashed border-red-500/30 rounded-xl p-3 overflow-y-auto space-y-2 h-full"></div>
                 </div>
 
                 <div class="mt-6 text-center">
@@ -123,7 +129,8 @@
                         <div class="text-2xl font-black text-slate-600 italic mb-4">VS</div>
                         <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider text-center">Paris en cours</h4>
                         <div id="liveBets" class="w-full space-y-2 text-xs max-h-[300px] overflow-y-auto text-center">
-                            </div>
+                            <!-- Rempli en JS -->
+                        </div>
                     </div>
 
                     <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col">
@@ -147,6 +154,7 @@
         </div>
     </div>
 
+    <!-- MODALE HISTORIQUE -->
     <div id="historyModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-lg w-full">
             <div class="flex justify-between items-center mb-6">
@@ -154,10 +162,12 @@
                 <button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
             </div>
             <div id="historyModalContent" class="space-y-4">
-                </div>
+                <!-- Rempli en JS -->
+            </div>
         </div>
     </div>
 
+    <!-- MODALE PARAMETRES -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-md w-full">
             <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
@@ -202,6 +212,7 @@
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -232,12 +243,11 @@
         let activeMatch = null;
         let matchHistory = [];
         
-        // Paramètres par défaut
         let appSettings = {
             baseElo: 1000,
             kWin: 32,
             kLoss: 32,
-            baseOdds: 2.0 // Valeur par défaut
+            baseOdds: 2.0
         };
 
         // -----------------------------------------
@@ -251,7 +261,7 @@
                     baseElo: Number(data.baseElo) || 1000,
                     kWin: Number(data.kWin) || 32,
                     kLoss: Number(data.kLoss) || 32,
-                    baseOdds: Number(data.baseOdds) || 2.0 // Récupération Firebase
+                    baseOdds: Number(data.baseOdds) || 2.0
                 };
             }
         });
@@ -317,9 +327,31 @@
             set(draftRef, { teamA: draftA, teamB: draftB });
         }
 
-        window.moveToA = (id) => { draftA.push(id); draftB = draftB.filter(x => x !== id); syncDraft(); };
-        window.moveToB = (id) => { draftB.push(id); draftA = draftA.filter(x => x !== id); syncDraft(); };
-        window.removeFromDraft = (id) => { draftA = draftA.filter(x => x !== id); draftB = draftB.filter(x => x !== id); syncDraft(); };
+        // NOUVEAU : Logique Drag & Drop
+        window.handleDragStart = (event, playerId) => {
+            event.dataTransfer.setData('text/plain', playerId);
+            event.dataTransfer.effectAllowed = 'move';
+        };
+
+        window.handleDrop = (event, targetContainer) => {
+            event.preventDefault();
+            const playerId = event.dataTransfer.getData('text/plain');
+            if (!playerId) return;
+
+            // Retirer de toutes les équipes
+            draftA = draftA.filter(x => x !== playerId);
+            draftB = draftB.filter(x => x !== playerId);
+
+            // Ajouter dans la nouvelle équipe
+            if (targetContainer === 'A') {
+                draftA.push(playerId);
+            } else if (targetContainer === 'B') {
+                draftB.push(playerId);
+            }
+            // Si 'Available', le joueur reste retiré de draftA et draftB
+
+            syncDraft();
+        };
 
         window.prepareMatch = () => {
             if (draftA.length === 0 || draftB.length === 0) {
@@ -336,13 +368,11 @@
             const probA = 1 / (1 + Math.pow(10, (eloB - eloA) / 400));
             const probB = 1 - probA;
 
-            // Application du ratio basé sur la cote de base paramétrée
             const oddsMultiplier = appSettings.baseOdds / 2.0;
 
             const newMatch = {
                 teamA: teamAData,
                 teamB: teamBData,
-                // On multiplie l'inverse de la probabilité par notre multiplicateur (marge)
                 oddsA: Math.max(1.01, Math.min((1 / probA) * oddsMultiplier, 20)).toFixed(2),
                 oddsB: Math.max(1.01, Math.min((1 / probB) * oddsMultiplier, 20)).toFixed(2),
                 probA: probA,
@@ -432,7 +462,6 @@
 
             const updates = {};
 
-            // 1. Mise à jour Elo
             activeMatch.teamA.forEach(p => {
                 updates[`players/${p.id}/elo`] = Math.max(100, p.elo + eloChangeA);
                 updates[`players/${p.id}/wins`] = winnerStr === 'A' ? p.wins + 1 : p.wins;
@@ -444,7 +473,6 @@
                 updates[`players/${p.id}/losses`] = winnerStr === 'A' ? p.losses + 1 : p.losses;
             });
 
-            // 2. Archivage
             const historyEntry = {
                 timestamp: Date.now(),
                 teamA_names: activeMatch.teamA.map(p=>p.name).join(', '),
@@ -457,7 +485,6 @@
             const newHistoryRef = push(historyRef);
             updates[`history/${newHistoryRef.key}`] = historyEntry;
 
-            // 3. Purge du match
             updates[`activeMatch`] = null;
 
             update(ref(db), updates);
@@ -606,32 +633,30 @@
             }
         }
 
-        function createPlayerCard(p, context) {
+        function createPlayerCard(p) {
             const div = document.createElement('div');
-            div.className = "flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm";
+            
+            // Propriétés du Drag and Drop (Nouveau design de la carte)
+            div.draggable = true;
+            div.ondragstart = (event) => window.handleDragStart(event, p.id);
+            
+            // Curseur adapté pour indiquer qu'on peut glisser l'élément
+            div.className = "flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-500 transition group";
+            
             const initials = p.name.substring(0, 2).toUpperCase();
             
-            const leftSide = `
+            div.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">${initials}</div>
                     <div>
                         <div class="text-sm font-bold">${p.name}</div>
                         <div class="text-xs text-slate-400">⭐ ${Math.round(p.elo)}</div>
                     </div>
-                </div>`;
-
-            let actionBtn = '';
-            if (context === 'available') {
-                actionBtn = `
-                    <div class="flex gap-1">
-                        <button onclick="window.moveToA('${p.id}')" class="p-1.5 text-blue-400 hover:bg-blue-900/50 rounded transition" title="Ajouter Bleu">◀</button>
-                        <button onclick="window.moveToB('${p.id}')" class="p-1.5 text-red-400 hover:bg-red-900/50 rounded transition" title="Ajouter Rouge">▶</button>
-                    </div>`;
-            } else {
-                actionBtn = `<button onclick="window.removeFromDraft('${p.id}')" class="p-1 text-slate-500 hover:text-white rounded transition">✕</button>`;
-            }
-
-            div.innerHTML = leftSide + actionBtn;
+                </div>
+                <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </div>
+            `;
             return div;
         }
 
@@ -645,9 +670,9 @@
             teamBContainer.innerHTML = '';
 
             players.forEach(p => {
-                if (draftA.includes(p.id)) teamAContainer.appendChild(createPlayerCard(p, 'teamA'));
-                else if (draftB.includes(p.id)) teamBContainer.appendChild(createPlayerCard(p, 'teamB'));
-                else availableContainer.appendChild(createPlayerCard(p, 'available'));
+                if (draftA.includes(p.id)) teamAContainer.appendChild(createPlayerCard(p));
+                else if (draftB.includes(p.id)) teamBContainer.appendChild(createPlayerCard(p));
+                else availableContainer.appendChild(createPlayerCard(p));
             });
         }
 
