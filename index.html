@@ -26,7 +26,7 @@
         
         <div class="flex flex-wrap gap-3 items-center justify-center md:justify-end">
             <div id="adminPnlDisplay" class="admin-only hidden bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
-                Banque : <span class="text-slate-400 font-black">0$</span>
+                Banque en cours : <span class="text-slate-400 font-black">0$</span>
             </div>
 
             <div id="statusBadge" class="bg-slate-800 border border-slate-600 px-4 py-1.5 rounded-full text-xs font-bold text-slate-400">
@@ -71,9 +71,20 @@
                 <ul id="leaderboard" class="space-y-3 max-h-[300px] overflow-y-auto pr-2"></ul>
             </div>
 
+            <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm flex flex-col">
+                <h2 class="text-lg font-semibold mb-4 text-white">📜 Historique (Session en cours)</h2>
+                <ul id="historyList" class="space-y-3 max-h-[250px] overflow-y-auto pr-2 text-sm flex-grow"></ul>
+                
+                <div class="admin-only hidden mt-4 pt-4 border-t border-slate-700 fade-in">
+                    <button onclick="window.endSession()" class="w-full bg-slate-700 hover:bg-indigo-600 text-white py-2 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
+                        📦 Clôturer la Session (Archiver)
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
-                <h2 class="text-lg font-semibold mb-4 text-white">📜 Historique</h2>
-                <ul id="historyList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 text-sm"></ul>
+                <h2 class="text-lg font-semibold mb-4 text-white">🗄️ Sessions Passées</h2>
+                <ul id="sessionsList" class="space-y-3 max-h-[250px] overflow-y-auto pr-2 text-sm"></ul>
             </div>
         </div>
 
@@ -137,8 +148,7 @@
                     <div class="w-full md:w-2/12 flex flex-col items-center justify-center border-x border-slate-700/50 px-2">
                         <div class="text-2xl font-black text-slate-600 italic mb-4">VS</div>
                         <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider text-center">Paris en cours</h4>
-                        <div id="liveBets" class="w-full space-y-2 text-xs max-h-[300px] overflow-y-auto text-center">
-                            </div>
+                        <div id="liveBets" class="w-full space-y-2 text-xs max-h-[300px] overflow-y-auto text-center"></div>
                     </div>
 
                     <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col">
@@ -165,13 +175,10 @@
     <div id="loginModal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
         <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
             <h3 class="text-2xl font-bold text-white mb-6">Espace Administrateur</h3>
-            
             <div class="space-y-4">
                 <input type="text" id="loginId" placeholder="Identifiant" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:border-indigo-500 focus:outline-none">
                 <input type="password" id="loginPw" placeholder="Mot de passe" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:border-indigo-500 focus:outline-none">
-                
                 <p id="loginError" class="hidden text-red-400 text-sm font-bold">Identifiants incorrects.</p>
-                
                 <button onclick="window.attemptLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition shadow-lg mt-4">Connexion</button>
             </div>
             <button onclick="window.closeLoginModal()" class="mt-6 text-sm text-slate-500 hover:text-white underline">Fermer</button>
@@ -188,6 +195,19 @@
         </div>
     </div>
 
+    <div id="sessionModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-xl w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    Détails de la Session
+                </h3>
+                <button onclick="window.closeSessionModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
+            </div>
+            <div id="sessionModalContent" class="space-y-4"></div>
+        </div>
+    </div>
+
     <div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-md w-full">
             <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
@@ -197,33 +217,24 @@
                 </h3>
                 <button onclick="window.closeSettingsModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
             </div>
-            
             <div class="space-y-5">
                 <div>
                     <label class="block text-sm font-bold text-slate-300 mb-1">Elo de départ (Base)</label>
-                    <p class="text-xs text-slate-500 mb-2">Cote d'un nouveau combattant avec 0 victoire / 0 défaite.</p>
                     <input type="number" id="setBaseElo" class="w-full p-2 rounded bg-slate-900 border border-slate-600 text-white focus:border-indigo-500 focus:outline-none">
                 </div>
-
                 <div class="bg-blue-900/20 p-3 rounded-xl border border-blue-500/20">
                     <label class="block text-sm font-bold text-blue-400 mb-1">Cote de base (50/50)</label>
-                    <p class="text-xs text-blue-600/70 mb-2">Cote appliquée si le match est parfaitement équilibré (Ex: 1.80 = Marge). Par défaut : 2.0</p>
                     <input type="number" step="0.01" id="setBaseOdds" class="w-full p-2 rounded bg-slate-900 border border-blue-600/50 text-white focus:border-blue-500 focus:outline-none">
                 </div>
-
                 <div class="bg-emerald-900/20 p-3 rounded-xl border border-emerald-500/20">
                     <label class="block text-sm font-bold text-emerald-400 mb-1">Facteur K (Victoire)</label>
-                    <p class="text-xs text-emerald-600/70 mb-2">Plus il est élevé, plus la cote baissera vite (et baissera de manière forte) en cas de victoire.</p>
                     <input type="number" id="setKWin" class="w-full p-2 rounded bg-slate-900 border border-emerald-600/50 text-white focus:border-emerald-500 focus:outline-none">
                 </div>
-
                 <div class="bg-red-900/20 p-3 rounded-xl border border-red-500/20">
                     <label class="block text-sm font-bold text-red-400 mb-1">Facteur K (Défaite)</label>
-                    <p class="text-xs text-red-600/70 mb-2">Plus il est élevé, plus la cote montera vite en cas de défaite.</p>
                     <input type="number" id="setKLoss" class="w-full p-2 rounded bg-slate-900 border border-red-600/50 text-white focus:border-red-500 focus:outline-none">
                 </div>
             </div>
-
             <div class="mt-6 pt-4 border-t border-slate-700">
                 <button onclick="window.saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold transition shadow-lg shadow-indigo-500/20">
                     Sauvegarder pour tous
@@ -255,12 +266,14 @@
         const activeMatchRef = ref(db, 'activeMatch');
         const historyRef = ref(db, 'history');
         const settingsRef = ref(db, 'settings');
+        const sessionsRef = ref(db, 'sessions'); // NOUVEAU REF
 
         let players = [];
         let draftA = [];
         let draftB = [];
         let activeMatch = null;
         let matchHistory = [];
+        let pastSessions = []; // NOUVELLE VARIABLE
         
         let appSettings = {
             baseElo: 1000,
@@ -272,7 +285,6 @@
         // -----------------------------------------
         // SYSTEME D'AUTHENTIFICATION
         // -----------------------------------------
-        
         let isAdmin = localStorage.getItem('arena_admin') === 'true';
 
         function updateAdminUI() {
@@ -299,7 +311,7 @@
             }
 
             renderDraftUI();
-            renderLeaderboard(); // Pour afficher/cacher le bouton d'édition
+            renderLeaderboard();
         }
 
         window.openLoginModal = () => {
@@ -309,14 +321,11 @@
             document.getElementById('loginError').classList.add('hidden');
         };
 
-        window.closeLoginModal = () => {
-            document.getElementById('loginModal').classList.add('hidden');
-        };
+        window.closeLoginModal = () => { document.getElementById('loginModal').classList.add('hidden'); };
 
         window.attemptLogin = () => {
             const id = document.getElementById('loginId').value;
             const pw = document.getElementById('loginPw').value;
-
             if (id === 'lafrench' && pw === 'lafrench123') {
                 isAdmin = true;
                 localStorage.setItem('arena_admin', 'true');
@@ -334,6 +343,30 @@
         };
 
         updateAdminUI();
+
+        // -----------------------------------------
+        // CALCUL DES BÉNÉFICES (Globale)
+        // -----------------------------------------
+        function calculatePnL(historyArray) {
+            let totalPnL = 0;
+            historyArray.forEach(match => {
+                if (match.bets) {
+                    Object.values(match.bets).forEach(bet => {
+                        if (bet.team === match.winner) totalPnL -= (bet.potentialWin - bet.amount);
+                        else totalPnL += bet.amount;
+                    });
+                }
+            });
+            return totalPnL;
+        }
+
+        function renderPnL() {
+            const currentPnL = calculatePnL(matchHistory);
+            const pnlElement = document.getElementById('adminPnlDisplay');
+            if (currentPnL > 0) pnlElement.innerHTML = `Banque en cours : <span class="text-emerald-400 font-black">+${currentPnL.toFixed(0)}$</span>`;
+            else if (currentPnL < 0) pnlElement.innerHTML = `Banque en cours : <span class="text-red-500 font-black">${currentPnL.toFixed(0)}$</span>`;
+            else pnlElement.innerHTML = `Banque en cours : <span class="text-slate-400 font-black">0$</span>`;
+        }
 
         // -----------------------------------------
         // ECOUTEURS FIREBASE
@@ -354,9 +387,7 @@
         onValue(playersRef, (snapshot) => {
             const data = snapshot.val();
             players = [];
-            if (data) {
-                for (let key in data) players.push({ id: key, ...data[key] });
-            }
+            if (data) { for (let key in data) players.push({ id: key, ...data[key] }); }
             renderLeaderboard();
             renderDraftUI();
         });
@@ -371,12 +402,19 @@
         onValue(historyRef, (snapshot) => {
             const data = snapshot.val();
             matchHistory = [];
-            if (data) {
-                for (let key in data) matchHistory.push(data[key]);
-            }
+            if (data) { for (let key in data) matchHistory.push(data[key]); }
             matchHistory.sort((a, b) => b.timestamp - a.timestamp);
             renderHistory();
-            calculateAndRenderPnL();
+            renderPnL();
+        });
+
+        // Nouveau : Ecouteur Sessions Archivées
+        onValue(sessionsRef, (snapshot) => {
+            const data = snapshot.val();
+            pastSessions = [];
+            if (data) { for (let key in data) pastSessions.push({ id: key, ...data[key] }); }
+            pastSessions.sort((a, b) => b.date - a.date);
+            renderSessions();
         });
 
         onValue(activeMatchRef, (snapshot) => {
@@ -392,24 +430,112 @@
         });
 
         // -----------------------------------------
-        // ACTIONS (JOUEURS, DRAFT & MATCH)
+        // GESTION DES SESSIONS (NOUVEAU)
+        // -----------------------------------------
+        
+        window.endSession = () => {
+            if(!isAdmin) return;
+            if(matchHistory.length === 0) {
+                alert("L'historique est vide, aucune session à clôturer.");
+                return;
+            }
+
+            if(confirm("📦 Voulez-vous clôturer cette session ? \n\nL'historique actuel sera archivé dans 'Sessions Passées' et la banque repartira à zéro.")) {
+                const sessionPnL = calculatePnL(matchHistory);
+                const newSession = {
+                    date: Date.now(),
+                    matches: matchHistory,
+                    pnl: sessionPnL
+                };
+
+                // Pousser la nouvelle session et vider l'historique
+                push(sessionsRef, newSession).then(() => {
+                    set(historyRef, null);
+                });
+            }
+        };
+
+        function renderSessions() {
+            const list = document.getElementById('sessionsList');
+            list.innerHTML = '';
+            
+            if(pastSessions.length === 0) {
+                list.innerHTML = '<li class="text-slate-500 text-center italic">Aucune session archivée</li>';
+                return;
+            }
+
+            pastSessions.forEach(s => {
+                const dateObj = new Date(s.date);
+                const dateStr = dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                const timeStr = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                
+                let pnlBadge = `<span class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-bold">0$</span>`;
+                if(s.pnl > 0) pnlBadge = `<span class="bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded text-xs font-bold">+${s.pnl.toFixed(0)}$</span>`;
+                else if(s.pnl < 0) pnlBadge = `<span class="bg-red-900/50 text-red-400 px-2 py-1 rounded text-xs font-bold">${s.pnl.toFixed(0)}$</span>`;
+
+                const li = document.createElement('li');
+                li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm flex justify-between items-center";
+                li.onclick = () => window.openSessionModal(s);
+                
+                li.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-200">Session du ${dateStr}</div>
+                        <div class="text-xs text-slate-500">${s.matches.length} combats • ${timeStr}</div>
+                    </div>
+                    <div>${pnlBadge}</div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        window.openSessionModal = (sessionData) => {
+            const content = document.getElementById('sessionModalContent');
+            let matchesHTML = '';
+
+            sessionData.matches.forEach((m, index) => {
+                const isAWin = m.winner === 'A';
+                matchesHTML += `
+                    <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/50 text-sm">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="${isAWin ? 'text-blue-400 font-bold' : 'text-slate-500 line-through'} truncate w-5/12">${m.teamA_names}</span>
+                            <span class="text-xs text-slate-600 font-bold">VS</span>
+                            <span class="${!isAWin ? 'text-red-400 font-bold' : 'text-slate-500 line-through'} text-right truncate w-5/12">${m.teamB_names}</span>
+                        </div>
+                        <div class="text-xs text-slate-500 text-center mt-2">
+                            ${m.bets ? Object.keys(m.bets).length : 0} paries enregistrés
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = `
+                <div class="text-center mb-4">
+                    <div class="text-slate-400 text-sm">Bilan de la soirée</div>
+                    <div class="text-3xl font-black ${sessionData.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">${sessionData.pnl > 0 ? '+' : ''}${sessionData.pnl.toFixed(0)}$</div>
+                </div>
+                <h4 class="font-semibold text-slate-300 mb-3 text-sm uppercase tracking-wider">Combats de la session (${sessionData.matches.length})</h4>
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    ${matchesHTML}
+                </div>
+            `;
+            document.getElementById('sessionModal').classList.remove('hidden');
+        };
+
+        window.closeSessionModal = () => { document.getElementById('sessionModal').classList.add('hidden'); };
+
+
+        // -----------------------------------------
+        // ACTIONS (DRAFT & MATCH)
         // -----------------------------------------
 
         window.addPlayer = () => {
             if(!isAdmin) return;
             const nameInput = document.getElementById('playerName');
             if (nameInput.value.trim() === '') return;
-            
-            push(playersRef, { 
-                name: nameInput.value.trim(), 
-                elo: appSettings.baseElo, 
-                wins: 0, 
-                losses: 0 
-            });
+            push(playersRef, { name: nameInput.value.trim(), elo: appSettings.baseElo, wins: 0, losses: 0 });
             nameInput.value = '';
         };
 
-        // NOUVEAU : Édition d'un joueur
         window.editPlayer = (id, oldName) => {
             if(!isAdmin) return;
             const newName = prompt("Nouveau pseudo pour ce combattant :", oldName);
@@ -438,21 +564,15 @@
             draftA = draftA.filter(x => x !== playerId);
             draftB = draftB.filter(x => x !== playerId);
 
-            if (targetContainer === 'A') {
-                draftA.push(playerId);
-            } else if (targetContainer === 'B') {
-                draftB.push(playerId);
-            }
+            if (targetContainer === 'A') draftA.push(playerId);
+            else if (targetContainer === 'B') draftB.push(playerId);
 
             syncDraft();
         };
 
         window.prepareMatch = () => {
             if(!isAdmin) return;
-            if (draftA.length === 0 || draftB.length === 0) {
-                alert("Il faut au moins un joueur dans chaque équipe !");
-                return;
-            }
+            if (draftA.length === 0 || draftB.length === 0) { alert("Il faut au moins un joueur dans chaque équipe !"); return; }
 
             const teamAData = players.filter(p => draftA.includes(p.id));
             const teamBData = players.filter(p => draftB.includes(p.id));
@@ -475,18 +595,13 @@
                 bets: {} 
             };
 
-            set(activeMatchRef, newMatch).then(() => {
-                set(draftRef, { teamA: [], teamB: [] });
-            });
+            set(activeMatchRef, newMatch).then(() => { set(draftRef, { teamA: [], teamB: [] }); });
         };
 
-        window.cancelMatch = () => {
-            if(!isAdmin) return;
-            set(activeMatchRef, null);
-        };
+        window.cancelMatch = () => { if(!isAdmin) return; set(activeMatchRef, null); };
 
         // -----------------------------------------
-        // GESTION DES PARAMETRES
+        // PARAMETRES & RESET GLOBAL
         // -----------------------------------------
 
         window.openSettingsModal = () => {
@@ -498,9 +613,7 @@
             document.getElementById('settingsModal').classList.remove('hidden');
         };
 
-        window.closeSettingsModal = () => {
-            document.getElementById('settingsModal').classList.add('hidden');
-        };
+        window.closeSettingsModal = () => { document.getElementById('settingsModal').classList.add('hidden'); };
 
         window.saveSettings = () => {
             if(!isAdmin) return;
@@ -510,37 +623,38 @@
                 kLoss: Number(document.getElementById('setKLoss').value) || 32,
                 baseOdds: Number(document.getElementById('setBaseOdds').value) || 2.0
             };
-            set(settingsRef, newSettings).then(() => {
-                window.closeSettingsModal();
-            });
+            set(settingsRef, newSettings).then(() => { window.closeSettingsModal(); });
+        };
+
+        window.resetAllData = () => {
+            if(!isAdmin) return;
+            if(confirm("⚠️ ATTENTION : Voulez-vous effacer TOUS les joueurs, l'historique et les sessions ? Action irréversible.")) {
+                const securityCheck = prompt("Tapez 'RESET' (en majuscule) pour confirmer :");
+                if (securityCheck === 'RESET') {
+                    const resetUpdates = { players: null, draft: null, activeMatch: null, history: null, sessions: null };
+                    update(ref(db), resetUpdates).then(() => { alert("Base de données vidée."); }).catch(e => alert("Erreur : " + e));
+                }
+            }
         };
 
         // -----------------------------------------
-        // SYSTEME DE PARIS
+        // SYSTEME DE PARIS ET MODALES
         // -----------------------------------------
 
         window.placeBet = (team) => {
             if (!activeMatch || !isAdmin) return;
-            
             const nameId = team === 'A' ? 'betNameA' : 'betNameB';
             const amountId = team === 'A' ? 'betAmountA' : 'betAmountB';
-            
-            const nameInput = document.getElementById(nameId);
-            const amountInput = document.getElementById(amountId);
-            
-            const bettorName = nameInput.value.trim() || "Anonyme";
-            const amount = parseFloat(amountInput.value);
+            const bettorName = document.getElementById(nameId).value.trim() || "Anonyme";
+            const amount = parseFloat(document.getElementById(amountId).value);
 
             if (isNaN(amount) || amount <= 0) { alert("Montant invalide."); return; }
 
-            nameInput.value = '';
-            amountInput.value = '';
+            document.getElementById(nameId).value = '';
+            document.getElementById(amountId).value = '';
 
-            const matchBetsRef = ref(db, 'activeMatch/bets');
-            push(matchBetsRef, {
-                user: bettorName,
-                team: team,
-                amount: amount,
+            push(ref(db, 'activeMatch/bets'), {
+                user: bettorName, team: team, amount: amount,
                 potentialWin: amount * parseFloat(team === 'A' ? activeMatch.oddsA : activeMatch.oddsB)
             });
         };
@@ -551,7 +665,6 @@
 
             const eloChangeA_win = appSettings.kWin * (1 - activeMatch.probA);
             const eloChangeA_loss = appSettings.kLoss * (0 - activeMatch.probA); 
-            
             const eloChangeB_win = appSettings.kWin * (1 - activeMatch.probB);
             const eloChangeB_loss = appSettings.kLoss * (0 - activeMatch.probB); 
 
@@ -559,7 +672,6 @@
             const eloChangeB = winnerStr === 'B' ? eloChangeB_win : eloChangeB_loss;
 
             const updates = {};
-
             activeMatch.teamA.forEach(p => {
                 updates[`players/${p.id}/elo`] = Math.max(100, p.elo + eloChangeA);
                 updates[`players/${p.id}/wins`] = winnerStr === 'A' ? p.wins + 1 : p.wins;
@@ -575,98 +687,37 @@
                 timestamp: Date.now(),
                 teamA_names: activeMatch.teamA.map(p=>p.name).join(', '),
                 teamB_names: activeMatch.teamB.map(p=>p.name).join(', '),
-                oddsA: activeMatch.oddsA,
-                oddsB: activeMatch.oddsB,
-                winner: winnerStr,
-                bets: activeMatch.bets || {} 
+                oddsA: activeMatch.oddsA, oddsB: activeMatch.oddsB,
+                winner: winnerStr, bets: activeMatch.bets || {} 
             };
             const newHistoryRef = push(historyRef);
             updates[`history/${newHistoryRef.key}`] = historyEntry;
-
             updates[`activeMatch`] = null;
-
             update(ref(db), updates);
         };
 
-        window.resetAllData = () => {
-            if(!isAdmin) return;
-            if(confirm("⚠️ ATTENTION : Voulez-vous vraiment effacer TOUS les joueurs, l'historique et la draft ? Cette action est irréversible.")) {
-                const securityCheck = prompt("Tapez 'RESET' (en majuscule) pour confirmer la suppression définitive :");
-                if (securityCheck === 'RESET') {
-                    const resetUpdates = {
-                        players: null,
-                        draft: null,
-                        activeMatch: null,
-                        history: null
-                    };
-                    update(ref(db), resetUpdates).then(() => {
-                        alert("Base de données vidée avec succès.");
-                    }).catch(e => alert("Erreur lors de la réinitialisation : " + e));
-                }
-            }
-        };
-
-        // -----------------------------------------
-        // CALCUL DES BÉNÉFICES ET RENDUS UI
-        // -----------------------------------------
-
-        function calculateAndRenderPnL() {
-            let totalPnL = 0;
-
-            matchHistory.forEach(match => {
-                if (match.bets) {
-                    Object.values(match.bets).forEach(bet => {
-                        if (bet.team === match.winner) {
-                            totalPnL -= (bet.potentialWin - bet.amount);
-                        } else {
-                            totalPnL += bet.amount;
-                        }
-                    });
-                }
-            });
-
-            const pnlElement = document.getElementById('adminPnlDisplay');
-            if (totalPnL > 0) {
-                pnlElement.innerHTML = `Banque : <span class="text-emerald-400 font-black">+${totalPnL.toFixed(0)}$</span>`;
-            } else if (totalPnL < 0) {
-                pnlElement.innerHTML = `Banque : <span class="text-red-500 font-black">${totalPnL.toFixed(0)}$</span>`;
-            } else {
-                pnlElement.innerHTML = `Banque : <span class="text-slate-400 font-black">0$</span>`;
-            }
-        }
-
         window.openHistoryModal = (matchData) => {
             const content = document.getElementById('historyModalContent');
-            let betsHTML = '<div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré pour ce match.</div>';
+            let betsHTML = '<div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré.</div>';
             
             if (matchData.bets && Object.keys(matchData.bets).length > 0) {
                 betsHTML = '<div class="space-y-2 max-h-60 overflow-y-auto pr-2">';
-                
-                // NOUVEAU : Tri des paris (Gagnants en premier)
                 const sortedBets = Object.values(matchData.bets).sort((a, b) => {
-                    const aWin = (a.team === matchData.winner) ? 1 : 0;
-                    const bWin = (b.team === matchData.winner) ? 1 : 0;
-                    return bWin - aWin; // Ordre décroissant
+                    return ((b.team === matchData.winner) ? 1 : 0) - ((a.team === matchData.winner) ? 1 : 0);
                 });
 
                 sortedBets.forEach(bet => {
                     const isTeamA = bet.team === 'A';
                     const color = isTeamA ? 'text-blue-400' : 'text-red-400';
-                    const teamName = isTeamA ? 'Bleu' : 'Rouge';
-                    
                     const isWinner = bet.team === matchData.winner;
                     const statusIcon = isWinner ? '✅' : '❌';
                     const gainText = isWinner ? `<span class="text-emerald-400 font-bold">+${bet.potentialWin.toFixed(0)}$</span>` : `<span class="text-slate-500 line-through">-${bet.amount}$</span>`;
 
                     betsHTML += `
                         <div class="bg-slate-900/80 p-3 rounded-lg flex justify-between items-center text-sm border border-slate-700/50">
-                            <div>
-                                <span class="font-bold text-white">${bet.user}</span> a misé 
-                                <span class="${color} font-bold">${bet.amount}$ sur ${teamName}</span>
-                            </div>
+                            <div><span class="font-bold text-white">${bet.user}</span> a misé <span class="${color} font-bold">${bet.amount}$ sur ${isTeamA ? 'Bleu' : 'Rouge'}</span></div>
                             <div class="flex items-center gap-2">${statusIcon} ${gainText}</div>
-                        </div>
-                    `;
+                        </div>`;
                 });
                 betsHTML += '</div>';
             }
@@ -674,13 +725,11 @@
             content.innerHTML = `
                 <div class="flex justify-between items-center mb-6 pb-6 border-b border-slate-700 text-center">
                     <div class="w-5/12 ${matchData.winner === 'A' ? 'text-blue-400 font-bold' : 'text-slate-500'}">
-                        <div class="text-lg">${matchData.teamA_names}</div>
-                        <span class="text-xs">Cote x${matchData.oddsA}</span>
+                        <div class="text-lg">${matchData.teamA_names}</div><span class="text-xs">Cote x${matchData.oddsA}</span>
                     </div>
                     <div class="w-2/12 text-slate-600 font-black italic text-xl">VS</div>
                     <div class="w-5/12 ${matchData.winner === 'B' ? 'text-red-400 font-bold' : 'text-slate-500'}">
-                        <div class="text-lg">${matchData.teamB_names}</div>
-                        <span class="text-xs">Cote x${matchData.oddsB}</span>
+                        <div class="text-lg">${matchData.teamB_names}</div><span class="text-xs">Cote x${matchData.oddsB}</span>
                     </div>
                 </div>
                 <h4 class="font-semibold text-slate-300 mb-3 text-sm uppercase tracking-wider">Récapitulatif des paris</h4>
@@ -689,13 +738,10 @@
             document.getElementById('historyModal').classList.remove('hidden');
         };
 
-        window.closeHistoryModal = () => {
-            document.getElementById('historyModal').classList.add('hidden');
-        };
+        window.closeHistoryModal = () => { document.getElementById('historyModal').classList.add('hidden'); };
 
         function renderActiveMatch() {
             if (!activeMatch) return;
-            
             document.getElementById('displayTeamA').innerText = activeMatch.teamA.map(p=>p.name).join(' & ');
             document.getElementById('displayTeamB').innerText = activeMatch.teamB.map(p=>p.name).join(' & ');
             document.getElementById('oddsA').innerText = `x${activeMatch.oddsA}`;
@@ -705,30 +751,22 @@
 
             const betsContainer = document.getElementById('liveBets');
             betsContainer.innerHTML = '';
-            
             if (activeMatch.bets) {
                 Object.values(activeMatch.bets).forEach(bet => {
-                    const div = document.createElement('div');
                     const color = bet.team === 'A' ? 'text-blue-400' : 'text-red-400';
+                    const div = document.createElement('div');
                     div.className = "bg-slate-900/50 p-1.5 rounded border border-slate-700/50 text-left mb-1";
-                    const teamName = bet.team === 'A' ? 'Bleu' : 'Rouge';
-                    const gain = bet.potentialWin.toFixed(0);
-                    
                     div.innerHTML = `
                         <div class="font-bold truncate text-slate-300">${bet.user}</div>
-                        <div class="${color} font-semibold">${bet.amount}$ sur ${teamName}</div>
-                        <div class="text-[9px] text-slate-500">Gain pot. : ${gain}$</div>
-                    `;
+                        <div class="${color} font-semibold">${bet.amount}$ sur ${bet.team === 'A' ? 'Bleu' : 'Rouge'}</div>
+                        <div class="text-[9px] text-slate-500">Gain pot. : ${bet.potentialWin.toFixed(0)}$</div>`;
                     betsContainer.appendChild(div);
                 });
-            } else {
-                betsContainer.innerHTML = '<span class="text-slate-500">Aucun pari</span>';
-            }
+            } else { betsContainer.innerHTML = '<span class="text-slate-500">Aucun pari</span>'; }
         }
 
         function createPlayerCard(p) {
             const div = document.createElement('div');
-            
             div.draggable = isAdmin;
             if (isAdmin) {
                 div.ondragstart = (event) => window.handleDragStart(event, p.id);
@@ -736,53 +774,30 @@
             } else {
                 div.className = "flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-default";
             }
-            
             const initials = p.name.substring(0, 2).toUpperCase();
-            
-            let grabIcon = isAdmin ? `
-                <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </div>` : '';
-
+            let grabIcon = isAdmin ? `<div class="text-slate-500 opacity-50 group-hover:opacity-100 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></div>` : '';
             div.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">${initials}</div>
-                    <div>
-                        <div class="text-sm font-bold">${p.name}</div>
-                        <div class="text-xs text-slate-400">⭐ ${Math.round(p.elo)}</div>
-                    </div>
-                </div>
-                ${grabIcon}
-            `;
+                    <div><div class="text-sm font-bold">${p.name}</div><div class="text-xs text-slate-400">⭐ ${Math.round(p.elo)}</div></div>
+                </div>${grabIcon}`;
             return div;
         }
 
-        // NOUVEAU : Fonction de rendu de la draft avec filtre de recherche
         window.renderDraftUI = () => {
             const availableContainer = document.getElementById('draftAvailable');
             const teamAContainer = document.getElementById('draftTeamA');
             const teamBContainer = document.getElementById('draftTeamB');
-            
             const searchInput = document.getElementById('draftSearch');
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
-            availableContainer.innerHTML = '';
-            teamAContainer.innerHTML = '';
-            teamBContainer.innerHTML = '';
-
+            availableContainer.innerHTML = ''; teamAContainer.innerHTML = ''; teamBContainer.innerHTML = '';
             const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name, 'fr', {sensitivity: 'base'}));
 
             sortedPlayers.forEach(p => {
-                if (draftA.includes(p.id)) {
-                    teamAContainer.appendChild(createPlayerCard(p));
-                } else if (draftB.includes(p.id)) {
-                    teamBContainer.appendChild(createPlayerCard(p));
-                } else {
-                    // Ne s'affiche dans "Disponibles" que si le nom correspond à la recherche
-                    if(p.name.toLowerCase().includes(searchTerm)) {
-                        availableContainer.appendChild(createPlayerCard(p));
-                    }
-                }
+                if (draftA.includes(p.id)) teamAContainer.appendChild(createPlayerCard(p));
+                else if (draftB.includes(p.id)) teamBContainer.appendChild(createPlayerCard(p));
+                else if(p.name.toLowerCase().includes(searchTerm)) availableContainer.appendChild(createPlayerCard(p));
             });
         }
 
@@ -790,30 +805,17 @@
             const list = document.getElementById('leaderboard');
             list.innerHTML = '';
             const sortedPlayers = [...players].sort((a, b) => b.elo - a.elo);
-
             sortedPlayers.forEach((p, index) => {
                 const totalGames = p.wins + p.losses;
                 const winrate = totalGames === 0 ? 0 : Math.round((p.wins / totalGames) * 100);
-                
-                let rankColor = "text-slate-400";
-                if(index === 0) rankColor = "text-yellow-400 font-bold";
-                if(index === 1) rankColor = "text-slate-300 font-bold";
-                if(index === 2) rankColor = "text-amber-600 font-bold";
-
-                // NOUVEAU : Bouton d'édition (Admin Uniquement)
-                const editBtn = isAdmin ? `<button onclick="window.editPlayer('${p.id}', '${p.name}')" class="text-slate-500 hover:text-blue-400 ml-2" title="Modifier le pseudo">✎</button>` : '';
+                let rankColor = index === 0 ? "text-yellow-400 font-bold" : index === 1 ? "text-slate-300 font-bold" : index === 2 ? "text-amber-600 font-bold" : "text-slate-400";
+                const editBtn = isAdmin ? `<button onclick="window.editPlayer('${p.id}', '${p.name.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-blue-400 ml-2" title="Modifier le pseudo">✎</button>` : '';
 
                 const li = document.createElement('li');
                 li.className = "flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50";
                 li.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="w-6 text-center ${rankColor}">#${index + 1}</span>
-                        <div class="font-semibold text-slate-200">${p.name} ${editBtn}</div>
-                    </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-sm font-bold text-indigo-400">${Math.round(p.elo)} <span class="text-xs text-slate-500 font-normal">pts</span></span>
-                        <span class="text-xs text-slate-500">${p.wins}V - ${p.losses}D (${winrate}%)</span>
-                    </div>`;
+                    <div class="flex items-center gap-3"><span class="w-6 text-center ${rankColor}">#${index + 1}</span><div class="font-semibold text-slate-200">${p.name} ${editBtn}</div></div>
+                    <div class="flex flex-col items-end"><span class="text-sm font-bold text-indigo-400">${Math.round(p.elo)} <span class="text-xs text-slate-500 font-normal">pts</span></span><span class="text-xs text-slate-500">${p.wins}V - ${p.losses}D (${winrate}%)</span></div>`;
                 list.appendChild(li);
             });
         }
@@ -821,19 +823,13 @@
         function renderHistory() {
             const list = document.getElementById('historyList');
             list.innerHTML = '';
-            
-            if(matchHistory.length === 0) {
-                list.innerHTML = '<li class="text-slate-500 text-center italic">Aucun match terminé</li>';
-                return;
-            }
+            if(matchHistory.length === 0) { list.innerHTML = '<li class="text-slate-500 text-center italic">Aucun match terminé</li>'; return; }
 
             matchHistory.forEach(m => {
                 const isAWin = m.winner === 'A';
                 const li = document.createElement('li');
                 li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm";
-                
                 li.onclick = () => window.openHistoryModal(m);
-                
                 li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <span class="${isAWin ? 'text-blue-400 font-bold' : 'text-slate-500 line-through'} truncate w-5/12">${m.teamA_names}</span>
@@ -842,10 +838,9 @@
                     </div>
                     <div class="flex justify-between text-[10px] text-slate-400 mt-2 bg-slate-800 px-2 py-1 rounded items-center">
                         <span>Cote: x${m.oddsA}</span>
-                        <span class="text-slate-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> Détails</span>
+                        <span class="text-slate-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Détails</span>
                         <span>Cote: x${m.oddsB}</span>
-                    </div>
-                `;
+                    </div>`;
                 list.appendChild(li);
             });
         }
