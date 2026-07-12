@@ -251,6 +251,30 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+        // Déclaration des fonctions que le HTML va appeler
+        window.addPlayer = addPlayer;
+        window.editPlayer = editPlayer;
+        window.handleDrop = handleDrop;
+        window.prepareMatch = prepareMatch;
+        window.cancelMatch = cancelMatch;
+        window.placeBet = placeBet;
+        window.resolveMatch = resolveMatch;
+        window.resetAllData = resetAllData;
+        window.openSettingsModal = openSettingsModal;
+        window.closeSettingsModal = closeSettingsModal;
+        window.saveSettings = saveSettings;
+        window.openHistoryModal = openHistoryModal;
+        window.closeHistoryModal = closeHistoryModal;
+        window.openLoginModal = openLoginModal;
+        window.closeLoginModal = closeLoginModal;
+        window.attemptLogin = attemptLogin;
+        window.handleDragStart = handleDragStart;
+        window.logoutAdmin = logoutAdmin;
+        window.endSession = endSession;
+        window.openSessionModal = openSessionModal;
+        window.closeSessionModal = closeSessionModal;
+        window.renderDraftUI = renderDraftUI;
+
         const firebaseConfig = {
             apiKey: "AIzaSyCgiapnMdkb8FSF68Od6D4l0eVFAqZh_yI",
             authDomain: "french-bet.firebaseapp.com",
