@@ -88,13 +88,10 @@
                     Draft
                 </h2>
                 
-                <div class="grid grid-cols-3 gap-4 text-sm font-medium text-slate-400 mb-2 text-center items-end">
-                    <div class="pb-2">Équipe Bleue</div>
-                    <div>
-                        Joueurs Disponibles
-                        <input type="text" id="draftSearch" oninput="window.renderDraftUI()" placeholder="Rechercher..." class="mt-2 w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
-                    </div>
-                    <div class="pb-2">Équipe Rouge</div>
+                <div class="grid grid-cols-3 gap-4 text-sm font-medium text-slate-400 mb-2 text-center">
+                    <div>Équipe Bleue</div>
+                    <div>Joueurs Disponibles</div>
+                    <div>Équipe Rouge</div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4 h-[300px]">
@@ -299,7 +296,6 @@
             }
 
             renderDraftUI();
-            renderLeaderboard(); // Pour afficher/cacher le bouton d'édition
         }
 
         window.openLoginModal = () => {
@@ -392,7 +388,7 @@
         });
 
         // -----------------------------------------
-        // ACTIONS (JOUEURS, DRAFT & MATCH)
+        // ACTIONS (DRAFT & MATCH)
         // -----------------------------------------
 
         window.addPlayer = () => {
@@ -407,15 +403,6 @@
                 losses: 0 
             });
             nameInput.value = '';
-        };
-
-        // NOUVEAU : Édition d'un joueur
-        window.editPlayer = (id, oldName) => {
-            if(!isAdmin) return;
-            const newName = prompt("Nouveau pseudo pour ce combattant :", oldName);
-            if (newName && newName.trim() !== '' && newName !== oldName) {
-                update(ref(db), { [`players/${id}/name`]: newName.trim() });
-            }
         };
 
         function syncDraft() {
@@ -641,15 +628,7 @@
             
             if (matchData.bets && Object.keys(matchData.bets).length > 0) {
                 betsHTML = '<div class="space-y-2 max-h-60 overflow-y-auto pr-2">';
-                
-                // NOUVEAU : Tri des paris (Gagnants en premier)
-                const sortedBets = Object.values(matchData.bets).sort((a, b) => {
-                    const aWin = (a.team === matchData.winner) ? 1 : 0;
-                    const bWin = (b.team === matchData.winner) ? 1 : 0;
-                    return bWin - aWin; // Ordre décroissant
-                });
-
-                sortedBets.forEach(bet => {
+                Object.values(matchData.bets).forEach(bet => {
                     const isTeamA = bet.team === 'A';
                     const color = isTeamA ? 'text-blue-400' : 'text-red-400';
                     const teamName = isTeamA ? 'Bleu' : 'Rouge';
@@ -757,32 +736,22 @@
             return div;
         }
 
-        // NOUVEAU : Fonction de rendu de la draft avec filtre de recherche
-        window.renderDraftUI = () => {
+        function renderDraftUI() {
             const availableContainer = document.getElementById('draftAvailable');
             const teamAContainer = document.getElementById('draftTeamA');
             const teamBContainer = document.getElementById('draftTeamB');
-            
-            const searchInput = document.getElementById('draftSearch');
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
             availableContainer.innerHTML = '';
             teamAContainer.innerHTML = '';
             teamBContainer.innerHTML = '';
 
+            // Tri par ordre alphabétique
             const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name, 'fr', {sensitivity: 'base'}));
 
             sortedPlayers.forEach(p => {
-                if (draftA.includes(p.id)) {
-                    teamAContainer.appendChild(createPlayerCard(p));
-                } else if (draftB.includes(p.id)) {
-                    teamBContainer.appendChild(createPlayerCard(p));
-                } else {
-                    // Ne s'affiche dans "Disponibles" que si le nom correspond à la recherche
-                    if(p.name.toLowerCase().includes(searchTerm)) {
-                        availableContainer.appendChild(createPlayerCard(p));
-                    }
-                }
+                if (draftA.includes(p.id)) teamAContainer.appendChild(createPlayerCard(p));
+                else if (draftB.includes(p.id)) teamBContainer.appendChild(createPlayerCard(p));
+                else availableContainer.appendChild(createPlayerCard(p));
             });
         }
 
@@ -800,15 +769,12 @@
                 if(index === 1) rankColor = "text-slate-300 font-bold";
                 if(index === 2) rankColor = "text-amber-600 font-bold";
 
-                // NOUVEAU : Bouton d'édition (Admin Uniquement)
-                const editBtn = isAdmin ? `<button onclick="window.editPlayer('${p.id}', '${p.name}')" class="text-slate-500 hover:text-blue-400 ml-2" title="Modifier le pseudo">✎</button>` : '';
-
                 const li = document.createElement('li');
                 li.className = "flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50";
                 li.innerHTML = `
                     <div class="flex items-center gap-3">
                         <span class="w-6 text-center ${rankColor}">#${index + 1}</span>
-                        <div class="font-semibold text-slate-200">${p.name} ${editBtn}</div>
+                        <div class="font-semibold text-slate-200">${p.name}</div>
                     </div>
                     <div class="flex flex-col items-end">
                         <span class="text-sm font-bold text-indigo-400">${Math.round(p.elo)} <span class="text-xs text-slate-500 font-normal">pts</span></span>
