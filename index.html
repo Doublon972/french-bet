@@ -26,7 +26,7 @@
         
         <div class="flex flex-wrap gap-3 items-center justify-center md:justify-end">
             <div id="adminPnlDisplay" class="admin-only hidden bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
-                Banque : <span class="text-slate-400 font-black">0$</span>
+                Banque Globale : <span class="text-slate-400 font-black">0$</span>
             </div>
 
             <div id="statusBadge" class="bg-slate-800 border border-slate-600 px-4 py-1.5 rounded-full text-xs font-bold text-slate-400">
@@ -129,10 +129,11 @@
 
                 <div class="flex flex-col md:flex-row justify-between items-stretch gap-6">
                     
-                    <div class="w-full md:w-5/12 bg-blue-900/30 p-6 rounded-xl border border-blue-500/30 text-center flex flex-col">
+                    <div class="w-full md:w-5/12 bg-blue-900/30 p-6 rounded-xl border border-blue-500/30 text-center flex flex-col relative">
                         <h3 class="text-blue-400 font-bold mb-2">Équipe Bleue</h3>
                         <div id="displayTeamA" class="text-sm text-slate-300 mb-4 flex-grow"></div>
                         <div class="text-4xl font-black text-white mb-1" id="oddsA">x1.00</div>
+                        <div class="text-[10px] font-bold text-blue-300 bg-blue-900/50 px-2 py-1 rounded mx-auto mb-2" id="poolA">Pot : 0$</div>
                         <div class="text-xs text-blue-400 mb-4" id="winProbA">50% chance</div>
                         
                         <div class="admin-only hidden mt-auto space-y-2 border-t border-blue-500/30 pt-4 fade-in">
@@ -151,10 +152,11 @@
                             </div>
                     </div>
 
-                    <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col">
+                    <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col relative">
                         <h3 class="text-red-400 font-bold mb-2">Équipe Rouge</h3>
                         <div id="displayTeamB" class="text-sm text-slate-300 mb-4 flex-grow"></div>
                         <div class="text-4xl font-black text-white mb-1" id="oddsB">x1.00</div>
+                        <div class="text-[10px] font-bold text-red-300 bg-red-900/50 px-2 py-1 rounded mx-auto mb-2" id="poolB">Pot : 0$</div>
                         <div class="text-xs text-red-400 mb-4" id="winProbB">50% chance</div>
                         
                         <div class="admin-only hidden mt-auto space-y-2 border-t border-red-500/30 pt-4 fade-in">
@@ -189,12 +191,18 @@
     </div>
 
     <div id="historyModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 fade-in">
-        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-lg w-full">
-            <div class="flex justify-between items-center mb-6">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6 shrink-0">
                 <h3 class="text-xl font-bold text-white">Détails du Match</h3>
                 <button onclick="window.closeHistoryModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
             </div>
-            <div id="historyModalContent" class="space-y-4"></div>
+            <div id="historyModalContent" class="space-y-4 flex-grow overflow-hidden flex flex-col"></div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-700 shrink-0 text-right">
+                <button id="cancelMatchBtn" class="admin-only hidden bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold shadow-lg">
+                    ⚠️ Annuler ce match et restaurer l'Elo
+                </button>
+            </div>
         </div>
     </div>
 
@@ -254,7 +262,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCgiapnMdkb8FSF68Od6D4l0eVFAqZh_yI",
@@ -284,6 +292,7 @@
         let matchHistory = [];
         let sessionsHistory = [];
         let draftSearchTerm = "";
+        let currentOpenModalMatchId = null;
         
         let appSettings = {
             baseElo: 1000,
@@ -323,6 +332,7 @@
 
             renderDraftUI();
             renderLeaderboard();
+            if(activeMatch) renderActiveMatch();
         }
 
         window.openLoginModal = () => {
@@ -395,11 +405,21 @@
             const data = snapshot.val();
             matchHistory = [];
             if (data) {
-                for (let key in data) matchHistory.push(data[key]);
+                for (let key in data) matchHistory.push({ id: key, ...data[key] });
             }
             matchHistory.sort((a, b) => b.timestamp - a.timestamp);
             renderHistory();
             calculateAndRenderPnL();
+            
+            // Auto-refresh history modal if open
+            if(currentOpenModalMatchId) {
+                const updatedMatch = matchHistory.find(m => m.id === currentOpenModalMatchId);
+                if(updatedMatch) {
+                    window.openHistoryModal(updatedMatch);
+                } else {
+                    window.closeHistoryModal();
+                }
+            }
         });
 
         onValue(sessionsRef, (snapshot) => {
@@ -523,6 +543,51 @@
             set(activeMatchRef, null);
         };
 
+        window.cancelHistoryMatch = (matchId) => {
+            if(!isAdmin) return;
+            if(!confirm("⚠️ ATTENTION : Voulez-vous vraiment annuler ce match ? Les points Elo et les victoires/défaites des joueurs seront restaurés.")) return;
+
+            const match = matchHistory.find(m => m.id === matchId);
+            if(!match) return;
+
+            const updates = {};
+            
+            // Restauration de l'Elo
+            if(match.eloChanges) {
+                for(let playerId in match.eloChanges) {
+                    const p = players.find(x => x.id === playerId);
+                    if(p) {
+                        updates[`players/${playerId}/elo`] = Math.max(100, p.elo - match.eloChanges[playerId]);
+                    }
+                }
+            }
+            
+            // Restauration des victoires / défaites
+            if(match.teamA_ids) {
+                match.teamA_ids.forEach(id => {
+                    const p = players.find(x => x.id === id);
+                    if(p) {
+                        updates[`players/${id}/wins`] = match.winner === 'A' ? Math.max(0, p.wins - 1) : p.wins;
+                        updates[`players/${id}/losses`] = match.winner === 'B' ? Math.max(0, p.losses - 1) : p.losses;
+                    }
+                });
+            }
+            if(match.teamB_ids) {
+                match.teamB_ids.forEach(id => {
+                    const p = players.find(x => x.id === id);
+                    if(p) {
+                        updates[`players/${id}/wins`] = match.winner === 'B' ? Math.max(0, p.wins - 1) : p.wins;
+                        updates[`players/${id}/losses`] = match.winner === 'A' ? Math.max(0, p.losses - 1) : p.losses;
+                    }
+                });
+            }
+
+            updates[`history/${matchId}`] = null;
+            update(ref(db), updates).then(() => { 
+                window.closeHistoryModal();
+            });
+        };
+
         // -----------------------------------------
         // GESTION DES PARAMETRES & SESSIONS
         // -----------------------------------------
@@ -574,10 +639,17 @@
                 }
             });
 
+            // Conversion de l'array en objet pour Firebase
+            const matchesObj = {};
+            matchHistory.forEach(m => {
+                const {id, ...rest} = m;
+                matchesObj[id] = rest;
+            });
+
             const newSession = {
                 timestamp: Date.now(),
                 pnl: sessionPnL,
-                matches: matchHistory
+                matches: matchesObj
             };
 
             const updates = {};
@@ -616,8 +688,21 @@
                 user: bettorName,
                 team: team,
                 amount: amount,
-                potentialWin: amount * parseFloat(team === 'A' ? activeMatch.oddsA : activeMatch.oddsB)
+                potentialWin: amount * parseFloat(team === 'A' ? activeMatch.oddsA : activeMatch.oddsB),
+                paid: false
             });
+        };
+
+        window.cancelActiveBet = (betId) => {
+            if(!isAdmin) return;
+            if(confirm("Annuler ce pari ?")) {
+                update(ref(db), { [`activeMatch/bets/${betId}`]: null });
+            }
+        };
+
+        window.toggleBetPaid = (matchId, betId, currentStatus) => {
+            if(!isAdmin) return;
+            update(ref(db), { [`history/${matchId}/bets/${betId}/paid`]: !currentStatus });
         };
 
         window.resolveMatch = (winnerStr) => {
@@ -634,14 +719,21 @@
             const eloChangeB = winnerStr === 'B' ? eloChangeB_win : eloChangeB_loss;
 
             const updates = {};
+            const eloChangesLog = {};
 
             activeMatch.teamA.forEach(p => {
-                updates[`players/${p.id}/elo`] = Math.max(100, p.elo + eloChangeA);
+                const newElo = Math.max(100, p.elo + eloChangeA);
+                eloChangesLog[p.id] = newElo - p.elo; // Sauvegarde du delta exact
+                
+                updates[`players/${p.id}/elo`] = newElo;
                 updates[`players/${p.id}/wins`] = winnerStr === 'A' ? p.wins + 1 : p.wins;
                 updates[`players/${p.id}/losses`] = winnerStr === 'B' ? p.losses + 1 : p.losses;
             });
             activeMatch.teamB.forEach(p => {
-                updates[`players/${p.id}/elo`] = Math.max(100, p.elo + eloChangeB);
+                const newElo = Math.max(100, p.elo + eloChangeB);
+                eloChangesLog[p.id] = newElo - p.elo;
+                
+                updates[`players/${p.id}/elo`] = newElo;
                 updates[`players/${p.id}/wins`] = winnerStr === 'B' ? p.wins + 1 : p.wins;
                 updates[`players/${p.id}/losses`] = winnerStr === 'A' ? p.losses + 1 : p.losses;
             });
@@ -650,10 +742,13 @@
                 timestamp: Date.now(),
                 teamA_names: activeMatch.teamA.map(p=>p.name).join(', '),
                 teamB_names: activeMatch.teamB.map(p=>p.name).join(', '),
+                teamA_ids: activeMatch.teamA.map(p=>p.id),
+                teamB_ids: activeMatch.teamB.map(p=>p.id),
                 oddsA: activeMatch.oddsA,
                 oddsB: activeMatch.oddsB,
                 winner: winnerStr,
-                bets: activeMatch.bets || {} 
+                bets: activeMatch.bets || {},
+                eloChanges: eloChangesLog // Utilisé pour annuler le match proprement
             };
             const newHistoryRef = push(historyRef);
             updates[`history/${newHistoryRef.key}`] = historyEntry;
@@ -718,19 +813,24 @@
         }
 
         window.openHistoryModal = (matchData) => {
+            currentOpenModalMatchId = matchData.id;
             const content = document.getElementById('historyModalContent');
             let betsHTML = '<div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré pour ce match.</div>';
             
             if (matchData.bets && Object.keys(matchData.bets).length > 0) {
+                
+                // Préparation tableau [key, bet] pour pouvoir éditer l'état 'paid'
+                const betsArray = Object.entries(matchData.bets);
+
                 // TRI : Gagnants d'abord
-                const sortedBets = Object.values(matchData.bets).sort((a, b) => {
-                    const aWin = a.team === matchData.winner ? 1 : 0;
-                    const bWin = b.team === matchData.winner ? 1 : 0;
+                betsArray.sort((a, b) => {
+                    const aWin = a[1].team === matchData.winner ? 1 : 0;
+                    const bWin = b[1].team === matchData.winner ? 1 : 0;
                     return bWin - aWin;
                 });
 
-                betsHTML = '<div class="space-y-2 max-h-60 overflow-y-auto pr-2">';
-                sortedBets.forEach(bet => {
+                betsHTML = '<div class="space-y-3 overflow-y-auto pr-2 flex-grow">';
+                betsArray.forEach(([betId, bet]) => {
                     const isTeamA = bet.team === 'A';
                     const color = isTeamA ? 'text-blue-400' : 'text-red-400';
                     const teamName = isTeamA ? 'Bleu' : 'Rouge';
@@ -739,13 +839,24 @@
                     const statusIcon = isWinner ? '✅' : '❌';
                     const gainText = isWinner ? `<span class="text-emerald-400 font-bold">+${bet.potentialWin.toFixed(0)}$</span>` : `<span class="text-slate-500 line-through">-${bet.amount}$</span>`;
 
+                    let paidBtnHTML = '';
+                    if (isWinner && isAdmin) {
+                        const isPaid = bet.paid || false;
+                        const btnClass = isPaid ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/50 hover:bg-slate-700' : 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-emerald-600/20 hover:text-emerald-400 hover:border-emerald-500/50';
+                        const btnText = isPaid ? '✅ Payé' : 'À payer';
+                        paidBtnHTML = `<button onclick="window.toggleBetPaid('${matchData.id}', '${betId}', ${isPaid})" class="ml-4 text-xs px-3 py-1.5 rounded-lg border transition font-bold ${btnClass}">${btnText}</button>`;
+                    }
+
                     betsHTML += `
-                        <div class="bg-slate-900/80 p-3 rounded-lg flex justify-between items-center text-sm border border-slate-700/50">
-                            <div>
+                        <div class="bg-slate-900/80 p-4 rounded-xl flex flex-wrap gap-2 justify-between items-center text-sm border border-slate-700/50">
+                            <div class="flex items-center gap-2 text-base">
                                 <span class="font-bold text-white">${bet.user}</span> a misé 
                                 <span class="${color} font-bold">${bet.amount}$ sur ${teamName}</span>
                             </div>
-                            <div class="flex items-center gap-2">${statusIcon} ${gainText}</div>
+                            <div class="flex items-center">
+                                <span class="text-base">${statusIcon} ${gainText}</span>
+                                ${paidBtnHTML}
+                            </div>
                         </div>
                     `;
                 });
@@ -753,24 +864,35 @@
             }
 
             content.innerHTML = `
-                <div class="flex justify-between items-center mb-6 pb-6 border-b border-slate-700 text-center">
+                <div class="flex justify-between items-center mb-6 pb-6 border-b border-slate-700 text-center shrink-0">
                     <div class="w-5/12 ${matchData.winner === 'A' ? 'text-blue-400 font-bold' : 'text-slate-500'}">
-                        <div class="text-lg">${matchData.teamA_names}</div>
-                        <span class="text-xs">Cote x${matchData.oddsA}</span>
+                        <div class="text-xl mb-1">${matchData.teamA_names}</div>
+                        <span class="text-sm">Cote x${matchData.oddsA}</span>
                     </div>
-                    <div class="w-2/12 text-slate-600 font-black italic text-xl">VS</div>
+                    <div class="w-2/12 text-slate-600 font-black italic text-2xl">VS</div>
                     <div class="w-5/12 ${matchData.winner === 'B' ? 'text-red-400 font-bold' : 'text-slate-500'}">
-                        <div class="text-lg">${matchData.teamB_names}</div>
-                        <span class="text-xs">Cote x${matchData.oddsB}</span>
+                        <div class="text-xl mb-1">${matchData.teamB_names}</div>
+                        <span class="text-sm">Cote x${matchData.oddsB}</span>
                     </div>
                 </div>
-                <h4 class="font-semibold text-slate-300 mb-3 text-sm uppercase tracking-wider">Récapitulatif des paris</h4>
+                <h4 class="font-semibold text-slate-300 mb-4 text-sm uppercase tracking-wider shrink-0">Récapitulatif des paris</h4>
                 ${betsHTML}
             `;
+
+            // Configuration du bouton d'annulation global (Admin uniquement)
+            const cancelBtn = document.getElementById('cancelMatchBtn');
+            if (isAdmin) {
+                cancelBtn.classList.remove('hidden');
+                cancelBtn.onclick = () => window.cancelHistoryMatch(matchData.id);
+            } else {
+                cancelBtn.classList.add('hidden');
+            }
+
             document.getElementById('historyModal').classList.remove('hidden');
         };
 
         window.closeHistoryModal = () => {
+            currentOpenModalMatchId = null;
             document.getElementById('historyModal').classList.add('hidden');
         };
 
@@ -781,14 +903,18 @@
             const list = document.getElementById('sessionMatchesList');
             list.innerHTML = '';
             
-            if(!sessionData.matches || sessionData.matches.length === 0) {
+            // Reconstruire l'array à partir de l'objet stocké en db
+            const sessionMatches = sessionData.matches ? Object.entries(sessionData.matches).map(([k, v]) => ({id: k, ...v})) : [];
+            
+            if(sessionMatches.length === 0) {
                 list.innerHTML = '<li class="text-slate-500 text-center italic">Aucun match dans cette session</li>';
             } else {
-                sessionData.matches.forEach(m => {
+                sessionMatches.sort((a,b) => b.timestamp - a.timestamp).forEach(m => {
                     const isAWin = m.winner === 'A';
                     const li = document.createElement('li');
                     li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm";
-                    li.onclick = () => window.openHistoryModal(m);
+                    li.onclick = () => window.openHistoryModal(m); // Permet d'ouvrir la même modale pour le détail, bien que l'annulation sera désactivée si ce n'est pas dans l'historique courant (la fonction cherchera dans matchHistory)
+                    
                     li.innerHTML = `
                         <div class="flex justify-between items-center mb-1">
                             <span class="${isAWin ? 'text-blue-400 font-bold' : 'text-slate-500 line-through'} truncate w-5/12">${m.teamA_names}</span>
@@ -822,27 +948,39 @@
             document.getElementById('winProbA').innerText = `${(activeMatch.probA * 100).toFixed(0)}% chance`;
             document.getElementById('winProbB').innerText = `${(activeMatch.probB * 100).toFixed(0)}% chance`;
 
+            let potA = 0;
+            let potB = 0;
+
             const betsContainer = document.getElementById('liveBets');
             betsContainer.innerHTML = '';
             
             if (activeMatch.bets) {
-                Object.values(activeMatch.bets).forEach(bet => {
+                Object.entries(activeMatch.bets).forEach(([betId, bet]) => {
+                    if (bet.team === 'A') potA += bet.amount;
+                    if (bet.team === 'B') potB += bet.amount;
+
                     const div = document.createElement('div');
                     const color = bet.team === 'A' ? 'text-blue-400' : 'text-red-400';
-                    div.className = "bg-slate-900/50 p-1.5 rounded border border-slate-700/50 text-left mb-1";
+                    div.className = "bg-slate-900/50 p-1.5 rounded border border-slate-700/50 text-left mb-1 relative group";
                     const teamName = bet.team === 'A' ? 'Bleu' : 'Rouge';
                     const gain = bet.potentialWin.toFixed(0);
                     
+                    const deleteBtn = isAdmin ? `<button onclick="window.cancelActiveBet('${betId}')" class="absolute top-1 right-1 text-red-500/50 hover:text-red-500 font-bold opacity-0 group-hover:opacity-100 transition px-1">✕</button>` : '';
+
                     div.innerHTML = `
-                        <div class="font-bold truncate text-slate-300">${bet.user}</div>
+                        <div class="font-bold truncate text-slate-300 pr-4">${bet.user}</div>
                         <div class="${color} font-semibold">${bet.amount}$ sur ${teamName}</div>
                         <div class="text-[9px] text-slate-500">Gain pot. : ${gain}$</div>
+                        ${deleteBtn}
                     `;
                     betsContainer.appendChild(div);
                 });
             } else {
                 betsContainer.innerHTML = '<span class="text-slate-500">Aucun pari</span>';
             }
+
+            document.getElementById('poolA').innerText = `Pot : ${potA}$`;
+            document.getElementById('poolB').innerText = `Pot : ${potB}$`;
         }
 
         function createPlayerCard(p) {
@@ -979,7 +1117,7 @@
                 const pnlColor = pnl > 0 ? 'text-emerald-400' : (pnl < 0 ? 'text-red-500' : 'text-slate-400');
                 const sign = pnl > 0 ? '+' : '';
 
-                const nbMatches = session.matches ? session.matches.length : 0;
+                const nbMatches = session.matches ? Object.keys(session.matches).length : 0;
 
                 const li = document.createElement('li');
                 li.className = "flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 transition";
