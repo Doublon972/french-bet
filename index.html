@@ -207,12 +207,18 @@
     </div>
 
     <div id="sessionModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
-        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-xl w-full">
-            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-xl w-full flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4 shrink-0">
                 <h3 class="text-xl font-bold text-white" id="sessionModalTitle">Détails de la Session</h3>
                 <button onclick="window.closeSessionModal()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
             </div>
-            <ul id="sessionMatchesList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 text-sm"></ul>
+            <ul id="sessionMatchesList" class="space-y-3 overflow-y-auto pr-2 text-sm flex-grow"></ul>
+            
+            <div class="mt-6 pt-4 border-t border-slate-700 shrink-0 text-right">
+                <button id="cancelSessionBtn" class="admin-only hidden bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold shadow-lg">
+                    ⚠️ Supprimer la session (Restaure l'Elo)
+                </button>
+            </div>
         </div>
     </div>
 
@@ -369,7 +375,7 @@
         updateAdminUI();
 
         // -----------------------------------------
-        // ECOUTEURS FIREBASE (AVEC SECURITE ANTI-NULL)
+        // ECOUTEURS FIREBASE
         // -----------------------------------------
 
         onValue(settingsRef, (snapshot) => {
@@ -409,7 +415,6 @@
             const data = snapshot.val();
             matchHistory = [];
             if (data) {
-                // Filtre rigoureux pour éviter les entrées "null" ou corrompues
                 for (let key in data) {
                     const match = data[key];
                     if (match && typeof match === 'object' && match.teamA_names) {
@@ -421,7 +426,6 @@
             renderHistory();
             calculateAndRenderPnL();
             
-            // Auto-refresh history modal if open
             if(currentOpenModalMatchId) {
                 const updatedMatch = matchHistory.find(m => m.id === currentOpenModalMatchId);
                 if(updatedMatch) {
@@ -436,7 +440,6 @@
             const data = snapshot.val();
             sessionsHistory = [];
             if (data) {
-                // Filtre rigoureux
                 for (let key in data) {
                     const session = data[key];
                     if (session && typeof session === 'object' && session.timestamp) {
@@ -596,7 +599,6 @@
                 });
             }
 
-            // Ceci créera potentiellement un "null" dans la DB, mais on est protégé par notre nouveau filtre dans onValue !
             updates[`history/${matchId}`] = null; 
             update(ref(db), updates).then(() => { 
                 window.closeHistoryModal();
@@ -636,7 +638,6 @@
         window.closeSession = () => {
             if(!isAdmin) return;
             
-            // Ne garder que les matchs intègres
             const validMatches = matchHistory.filter(m => m && m.teamA_names);
             
             if(validMatches.length === 0) {
@@ -661,7 +662,6 @@
                 }
                 
                 const {id, ...rest} = match;
-                // Double sécurité : retirer toute potentielle clé undefined qui ferait planter Firebase
                 Object.keys(rest).forEach(k => { if(rest[k] === undefined) delete rest[k]; });
                 matchesObj[id] = rest;
             });
@@ -682,6 +682,65 @@
             }).catch(e => {
                 console.error("Firebase Update Error: ", e);
                 alert("Erreur lors de la clôture de la session : " + e.message);
+            });
+        };
+
+        window.cancelArchivedSession = (sessionId) => {
+            if(!isAdmin) return;
+            if(!confirm("⚠️ ATTENTION : Voulez-vous vraiment supprimer intégralement cette session ?\n\nTous les matchs seront annulés, et les points Elo ainsi que les victoires/défaites des joueurs seront restaurés à leur état précédent.")) return;
+
+            const session = sessionsHistory.find(s => s.id === sessionId);
+            if(!session) return;
+
+            const playerUpdates = {};
+            players.forEach(p => {
+                playerUpdates[p.id] = { elo: p.elo, wins: p.wins, losses: p.losses };
+            });
+
+            if (session.matches) {
+                const matchesList = Object.values(session.matches);
+                matchesList.forEach(match => {
+                    if(match.eloChanges) {
+                        for(let playerId in match.eloChanges) {
+                            if(playerUpdates[playerId]) {
+                                playerUpdates[playerId].elo -= match.eloChanges[playerId];
+                                playerUpdates[playerId].elo = Math.max(100, playerUpdates[playerId].elo);
+                            }
+                        }
+                    }
+                    if(match.teamA_ids) {
+                        match.teamA_ids.forEach(id => {
+                            if(playerUpdates[id]) {
+                                playerUpdates[id].wins = match.winner === 'A' ? Math.max(0, playerUpdates[id].wins - 1) : playerUpdates[id].wins;
+                                playerUpdates[id].losses = match.winner === 'B' ? Math.max(0, playerUpdates[id].losses - 1) : playerUpdates[id].losses;
+                            }
+                        });
+                    }
+                    if(match.teamB_ids) {
+                        match.teamB_ids.forEach(id => {
+                            if(playerUpdates[id]) {
+                                playerUpdates[id].wins = match.winner === 'B' ? Math.max(0, playerUpdates[id].wins - 1) : playerUpdates[id].wins;
+                                playerUpdates[id].losses = match.winner === 'A' ? Math.max(0, playerUpdates[id].losses - 1) : playerUpdates[id].losses;
+                            }
+                        });
+                    }
+                });
+            }
+
+            const updates = {};
+            for(let id in playerUpdates) {
+                const p = players.find(x => x.id === id);
+                if(p && (p.elo !== playerUpdates[id].elo || p.wins !== playerUpdates[id].wins || p.losses !== playerUpdates[id].losses)) {
+                    updates[`players/${id}/elo`] = playerUpdates[id].elo;
+                    updates[`players/${id}/wins`] = playerUpdates[id].wins;
+                    updates[`players/${id}/losses`] = playerUpdates[id].losses;
+                }
+            }
+            
+            updates[`sessions/${sessionId}`] = null;
+            
+            update(ref(db), updates).then(() => {
+                window.closeSessionModal();
             });
         };
 
@@ -858,7 +917,9 @@
                     const gainText = isWinner ? `<span class="text-emerald-400 font-bold">+${bet.potentialWin.toFixed(0)}$</span>` : `<span class="text-slate-500 line-through">-${bet.amount}$</span>`;
 
                     let paidBtnHTML = '';
-                    if (isWinner && isAdmin) {
+                    // Le bouton payer n'est affiché que si le match est dans l'historique EN COURS (pas archivé).
+                    // Si on veut aussi le modifier dans les archives, il faudrait une logique plus complexe. On s'en tient à l'historique live pour l'instant.
+                    if (isWinner && isAdmin && matchHistory.find(m => m.id === matchData.id)) {
                         const isPaid = bet.paid || false;
                         const btnClass = isPaid ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/50 hover:bg-slate-700' : 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-emerald-600/20 hover:text-emerald-400 hover:border-emerald-500/50';
                         const btnText = isPaid ? '✅ Payé' : 'À payer';
@@ -898,7 +959,8 @@
             `;
 
             const cancelBtn = document.getElementById('cancelMatchBtn');
-            if (isAdmin) {
+            // On affiche le bouton "Annuler" uniquement si le match est dans l'historique LIVE
+            if (isAdmin && matchHistory.find(m => m.id === matchData.id)) {
                 cancelBtn.classList.remove('hidden');
                 cancelBtn.onclick = () => window.cancelHistoryMatch(matchData.id);
             } else {
@@ -952,6 +1014,14 @@
                     `;
                     list.appendChild(li);
                 });
+            }
+
+            const cancelSessionBtn = document.getElementById('cancelSessionBtn');
+            if (isAdmin) {
+                cancelSessionBtn.classList.remove('hidden');
+                cancelSessionBtn.onclick = () => window.cancelArchivedSession(sessionData.id);
+            } else {
+                cancelSessionBtn.classList.add('hidden');
             }
 
             document.getElementById('sessionModal').classList.remove('hidden');
