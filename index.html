@@ -369,7 +369,7 @@
         updateAdminUI();
 
         // -----------------------------------------
-        // ECOUTEURS FIREBASE
+        // ECOUTEURS FIREBASE (AVEC SECURITE ANTI-NULL)
         // -----------------------------------------
 
         onValue(settingsRef, (snapshot) => {
@@ -388,7 +388,11 @@
             const data = snapshot.val();
             players = [];
             if (data) {
-                for (let key in data) players.push({ id: key, ...data[key] });
+                for (let key in data) {
+                    if (data[key] && typeof data[key] === 'object') {
+                        players.push({ id: key, ...data[key] });
+                    }
+                }
             }
             renderLeaderboard();
             renderDraftUI();
@@ -405,7 +409,13 @@
             const data = snapshot.val();
             matchHistory = [];
             if (data) {
-                for (let key in data) matchHistory.push({ id: key, ...data[key] });
+                // Filtre rigoureux pour éviter les entrées "null" ou corrompues
+                for (let key in data) {
+                    const match = data[key];
+                    if (match && typeof match === 'object' && match.teamA_names) {
+                        matchHistory.push({ id: key, ...match });
+                    }
+                }
             }
             matchHistory.sort((a, b) => b.timestamp - a.timestamp);
             renderHistory();
@@ -426,7 +436,13 @@
             const data = snapshot.val();
             sessionsHistory = [];
             if (data) {
-                for (let key in data) sessionsHistory.push({ id: key, ...data[key] });
+                // Filtre rigoureux
+                for (let key in data) {
+                    const session = data[key];
+                    if (session && typeof session === 'object' && session.timestamp) {
+                        sessionsHistory.push({ id: key, ...session });
+                    }
+                }
             }
             sessionsHistory.sort((a, b) => b.timestamp - a.timestamp);
             renderSessions();
@@ -552,7 +568,6 @@
 
             const updates = {};
             
-            // Restauration de l'Elo
             if(match.eloChanges) {
                 for(let playerId in match.eloChanges) {
                     const p = players.find(x => x.id === playerId);
@@ -562,7 +577,6 @@
                 }
             }
             
-            // Restauration des victoires / défaites
             if(match.teamA_ids) {
                 match.teamA_ids.forEach(id => {
                     const p = players.find(x => x.id === id);
@@ -582,7 +596,8 @@
                 });
             }
 
-            updates[`history/${matchId}`] = null;
+            // Ceci créera potentiellement un "null" dans la DB, mais on est protégé par notre nouveau filtre dans onValue !
+            updates[`history/${matchId}`] = null; 
             update(ref(db), updates).then(() => { 
                 window.closeHistoryModal();
             });
@@ -620,14 +635,21 @@
 
         window.closeSession = () => {
             if(!isAdmin) return;
-            if(matchHistory.length === 0) {
-                alert("Aucun match dans l'historique en cours à clôturer.");
+            
+            // Ne garder que les matchs intègres
+            const validMatches = matchHistory.filter(m => m && m.teamA_names);
+            
+            if(validMatches.length === 0) {
+                alert("Aucun match valide dans l'historique en cours à clôturer.");
                 return;
             }
+            
             if(!confirm("Voulez-vous clôturer cette session ? L'historique sera archivé et remis à zéro.")) return;
 
             let sessionPnL = 0;
-            matchHistory.forEach(match => {
+            const matchesObj = {};
+
+            validMatches.forEach(match => {
                 if (match.bets) {
                     Object.values(match.bets).forEach(bet => {
                         if (bet.team === match.winner) {
@@ -637,12 +659,10 @@
                         }
                     });
                 }
-            });
-
-            // Conversion de l'array en objet pour Firebase
-            const matchesObj = {};
-            matchHistory.forEach(m => {
-                const {id, ...rest} = m;
+                
+                const {id, ...rest} = match;
+                // Double sécurité : retirer toute potentielle clé undefined qui ferait planter Firebase
+                Object.keys(rest).forEach(k => { if(rest[k] === undefined) delete rest[k]; });
                 matchesObj[id] = rest;
             });
 
@@ -659,6 +679,9 @@
 
             update(ref(db), updates).then(() => {
                 alert("Session clôturée avec succès.");
+            }).catch(e => {
+                console.error("Firebase Update Error: ", e);
+                alert("Erreur lors de la clôture de la session : " + e.message);
             });
         };
 
@@ -723,7 +746,7 @@
 
             activeMatch.teamA.forEach(p => {
                 const newElo = Math.max(100, p.elo + eloChangeA);
-                eloChangesLog[p.id] = newElo - p.elo; // Sauvegarde du delta exact
+                eloChangesLog[p.id] = newElo - p.elo;
                 
                 updates[`players/${p.id}/elo`] = newElo;
                 updates[`players/${p.id}/wins`] = winnerStr === 'A' ? p.wins + 1 : p.wins;
@@ -748,7 +771,7 @@
                 oddsB: activeMatch.oddsB,
                 winner: winnerStr,
                 bets: activeMatch.bets || {},
-                eloChanges: eloChangesLog // Utilisé pour annuler le match proprement
+                eloChanges: eloChangesLog
             };
             const newHistoryRef = push(historyRef);
             updates[`history/${newHistoryRef.key}`] = historyEntry;
@@ -784,20 +807,18 @@
         function calculateAndRenderPnL() {
             let totalPnL = 0;
 
-            // Historique en cours
             matchHistory.forEach(match => {
-                if (match.bets) {
+                if (match && match.bets) {
                     Object.values(match.bets).forEach(bet => {
-                        if (bet.team === match.winner) {
-                            totalPnL -= (bet.potentialWin - bet.amount);
-                        } else {
-                            totalPnL += bet.amount;
+                        if (bet && bet.team === match.winner) {
+                            totalPnL -= ((bet.potentialWin || 0) - (bet.amount || 0));
+                        } else if (bet) {
+                            totalPnL += (bet.amount || 0);
                         }
                     });
                 }
             });
 
-            // Sessions archivées
             sessionsHistory.forEach(session => {
                 totalPnL += (session.pnl || 0);
             });
@@ -819,10 +840,7 @@
             
             if (matchData.bets && Object.keys(matchData.bets).length > 0) {
                 
-                // Préparation tableau [key, bet] pour pouvoir éditer l'état 'paid'
                 const betsArray = Object.entries(matchData.bets);
-
-                // TRI : Gagnants d'abord
                 betsArray.sort((a, b) => {
                     const aWin = a[1].team === matchData.winner ? 1 : 0;
                     const bWin = b[1].team === matchData.winner ? 1 : 0;
@@ -879,7 +897,6 @@
                 ${betsHTML}
             `;
 
-            // Configuration du bouton d'annulation global (Admin uniquement)
             const cancelBtn = document.getElementById('cancelMatchBtn');
             if (isAdmin) {
                 cancelBtn.classList.remove('hidden');
@@ -903,8 +920,14 @@
             const list = document.getElementById('sessionMatchesList');
             list.innerHTML = '';
             
-            // Reconstruire l'array à partir de l'objet stocké en db
-            const sessionMatches = sessionData.matches ? Object.entries(sessionData.matches).map(([k, v]) => ({id: k, ...v})) : [];
+            let sessionMatches = [];
+            if (sessionData.matches) {
+                for (let k in sessionData.matches) {
+                    if (sessionData.matches[k] && typeof sessionData.matches[k] === 'object') {
+                        sessionMatches.push({ id: k, ...sessionData.matches[k] });
+                    }
+                }
+            }
             
             if(sessionMatches.length === 0) {
                 list.innerHTML = '<li class="text-slate-500 text-center italic">Aucun match dans cette session</li>';
@@ -913,7 +936,7 @@
                     const isAWin = m.winner === 'A';
                     const li = document.createElement('li');
                     li.className = "bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm";
-                    li.onclick = () => window.openHistoryModal(m); // Permet d'ouvrir la même modale pour le détail, bien que l'annulation sera désactivée si ce n'est pas dans l'historique courant (la fonction cherchera dans matchHistory)
+                    li.onclick = () => window.openHistoryModal(m); 
                     
                     li.innerHTML = `
                         <div class="flex justify-between items-center mb-1">
