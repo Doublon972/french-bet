@@ -66,7 +66,7 @@
                 </div>
             </div>
 
-            <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm relative">
+            <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-white">🏆 Classement</h2>
                     <a href="classement.html" class="text-xs bg-slate-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold transition shadow-md flex items-center gap-2">
@@ -345,6 +345,8 @@
 
             renderDraftUI();
             renderLeaderboard();
+            renderHistory();
+            renderSessions();
             if(activeMatch) renderActiveMatch();
         }
 
@@ -961,8 +963,10 @@
                         <span class="text-sm">Cote x${matchData.oddsB}</span>
                     </div>
                 </div>
-                <h4 class="font-semibold text-slate-300 mb-4 text-sm uppercase tracking-wider shrink-0">Récapitulatif des paris</h4>
-                ${betsHTML}
+                <div class="admin-only ${isAdmin ? '' : 'hidden'} flex flex-col flex-grow overflow-hidden">
+                    <h4 class="font-semibold text-slate-300 mb-4 text-sm uppercase tracking-wider shrink-0">Récapitulatif des paris</h4>
+                    ${betsHTML}
+                </div>
             `;
 
             const cancelBtn = document.getElementById('cancelMatchBtn');
@@ -1238,7 +1242,7 @@
                         <span class="text-slate-200 font-semibold">${dateStr}</span>
                         <span class="text-[10px] text-slate-500 uppercase tracking-wider">${nbMatches} Matchs</span>
                     </div>
-                    <div class="font-bold ${pnlColor} bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                    <div class="font-bold ${pnlColor} bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 admin-only ${isAdmin ? '' : 'hidden'}">
                         ${sign}${Math.round(pnl)}$
                     </div>
                 `;
