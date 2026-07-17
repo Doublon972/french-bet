@@ -28,7 +28,7 @@
         
         <a href="index.html" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl transition font-bold flex items-center gap-2 shadow-lg">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Retour à l'Arène
+            Retour
         </a>
     </div>
 
@@ -99,7 +99,7 @@
                     
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50 flex flex-col h-full overflow-hidden">
                         <h3 class="text-sm font-bold text-slate-300 mb-4 shrink-0">Historique Personnel</h3>
-                        <ul id="pMatchHistory" class="space-y-2 overflow-y-auto flex-grow h-0 pr-2"></ul>
+                        <ul id="pMatchHistory" class="space-y-3 overflow-y-auto flex-grow h-0 pr-2"></ul>
                     </div>
                 </div>
             </div>
@@ -270,7 +270,6 @@
             document.getElementById('pTotalGames').innerText = total;
             document.getElementById('pWinrate').innerText = `${winrate}%`;
 
-            // Filtrage rétrocompatible (IDs pour les nouveaux matchs, Noms pour les anciens)
             const playerMatches = allMatches.filter(m => {
                 const inTeamAIds = m.teamA_ids && m.teamA_ids.includes(id);
                 const inTeamBIds = m.teamB_ids && m.teamB_ids.includes(id);
@@ -404,23 +403,41 @@
                         eloTxt = delta > 0 ? `<span class="text-emerald-400 font-bold">~+${delta}</span>` : `<span class="text-red-400 font-bold">~${delta}</span>`;
                     }
 
-                    // Surbrillance du nom de l'équipe (ou du joueur)
-                    const teamAHTML = m.teamA_names ? m.teamA_names.replace(player.name, `<strong class="text-white">${player.name}</strong>`) : '';
-                    const teamBHTML = m.teamB_names ? m.teamB_names.replace(player.name, `<strong class="text-white">${player.name}</strong>`) : '';
+                    // Formatage en "badge" pour faire ressortir le joueur sélectionné
+                    const highlightBadge = `<span class="inline-block bg-indigo-500/30 text-white font-black px-1.5 py-0.5 rounded-md border border-indigo-500/50 shadow-sm mx-0.5">${player.name}</span>`;
+                    
+                    const formatTeam = (teamStr) => {
+                        if (!teamStr) return '';
+                        return teamStr.split(', ').map(n => n === player.name ? highlightBadge : n).join(', ');
+                    };
+
+                    const teamAHTML = formatTeam(m.teamA_names);
+                    const teamBHTML = formatTeam(m.teamB_names);
 
                     const li = document.createElement('li');
-                    li.className = `p-3 rounded-xl border ${borderCol} flex flex-col gap-2 text-sm`;
+                    li.className = `p-3 rounded-xl border ${borderCol} flex flex-col text-sm shadow-sm relative overflow-hidden transition-all hover:bg-slate-800/30`;
                     
                     li.innerHTML = `
-                        <div class="flex justify-between items-center text-xs text-slate-400">
-                            <span>${dateStr}</span>
-                            <span>${eloTxt}</span>
+                        <!-- Ligne du haut : Date, Icône et Élo -->
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b ${isWin ? 'border-emerald-500/20' : 'border-red-500/20'}">
+                            <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
+                                <span class="text-base">${icon}</span>
+                                <span class="uppercase tracking-wider opacity-80">${dateStr}</span>
+                            </div>
+                            <div class="text-sm">${eloTxt}</div>
                         </div>
-                        <div class="flex justify-between items-center gap-2">
-                            <span class="${m.winner === 'A' ? 'text-slate-300' : 'text-slate-500'} truncate w-5/12 text-right">${teamAHTML}</span>
-                            <span class="text-[10px] font-bold text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded shrink-0">VS</span>
-                            <span class="${m.winner === 'B' ? 'text-slate-300' : 'text-slate-500'} truncate w-5/12">${teamBHTML}</span>
-                            <span class="ml-auto text-base shrink-0">${icon}</span>
+                        
+                        <!-- Ligne du bas : Équipes avec wrapping autorisé -->
+                        <div class="flex justify-between items-center gap-2 w-full">
+                            <div class="w-[45%] text-right ${m.winner === 'A' ? 'text-slate-200' : 'text-slate-500'} text-xs leading-relaxed break-words">
+                                ${teamAHTML}
+                            </div>
+                            <div class="w-[10%] flex justify-center shrink-0">
+                                <span class="text-[9px] font-black text-slate-600 bg-slate-900 px-1.5 py-0.5 rounded shadow-inner">VS</span>
+                            </div>
+                            <div class="w-[45%] text-left ${m.winner === 'B' ? 'text-slate-200' : 'text-slate-500'} text-xs leading-relaxed break-words">
+                                ${teamBHTML}
+                            </div>
                         </div>
                     `;
                     historyList.appendChild(li);
