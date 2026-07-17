@@ -174,6 +174,7 @@
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="loginModal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
         <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
             <h3 class="text-2xl font-bold text-white mb-6">Espace Administrateur</h3>
@@ -1134,14 +1135,24 @@
             list.innerHTML = '';
             const sortedPlayers = [...players].sort((a, b) => b.elo - a.elo);
 
+            let currentRank = 1;
+            let previousElo = null;
+
             sortedPlayers.forEach((p, index) => {
                 const totalGames = p.wins + p.losses;
                 const winrate = totalGames === 0 ? 0 : Math.round((p.wins / totalGames) * 100);
                 
+                const roundedElo = Math.round(p.elo);
+
+                if (previousElo !== null && roundedElo < previousElo) {
+                    currentRank++;
+                }
+                previousElo = roundedElo;
+                
                 let rankColor = "text-slate-400";
-                if(index === 0) rankColor = "text-yellow-400 font-bold";
-                if(index === 1) rankColor = "text-slate-300 font-bold";
-                if(index === 2) rankColor = "text-amber-600 font-bold";
+                if(currentRank === 1) rankColor = "text-yellow-400 font-bold";
+                if(currentRank === 2) rankColor = "text-slate-300 font-bold";
+                if(currentRank === 3) rankColor = "text-amber-600 font-bold";
 
                 const safeName = p.name.replace(/'/g, "\\'");
                 const editBtn = isAdmin ? `<button onclick="window.editPlayer('${p.id}', '${safeName}')" class="text-slate-500 hover:text-indigo-400 ml-2 transition" title="Éditer le nom"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>` : '';
@@ -1150,12 +1161,12 @@
                 li.className = "flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 group";
                 li.innerHTML = `
                     <div class="flex items-center gap-2">
-                        <span class="w-6 text-center ${rankColor}">#${index + 1}</span>
+                        <span class="w-6 text-center ${rankColor}">#${currentRank}</span>
                         <div class="font-semibold text-slate-200">${p.name}</div>
                         ${editBtn}
                     </div>
                     <div class="flex flex-col items-end">
-                        <span class="text-sm font-bold text-indigo-400">${Math.round(p.elo)} <span class="text-xs text-slate-500 font-normal">pts</span></span>
+                        <span class="text-sm font-bold text-indigo-400">${roundedElo} <span class="text-xs text-slate-500 font-normal">pts</span></span>
                         <span class="text-xs text-slate-500">${p.wins}V - ${p.losses}D (${winrate}%)</span>
                     </div>`;
                 list.appendChild(li);
