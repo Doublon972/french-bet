@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaFrench - Comptabilité</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-8">
+
+    <!-- Ecran de vérification d'accès -->
+    <div id="checkingAuth" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center gap-4">
+        <div class="w-10 h-10 border-4 border-slate-700 border-t-emerald-500 rounded-full animate-spin"></div>
+        <p class="text-slate-500 text-sm font-semibold tracking-wide">Vérification des droits d'accès...</p>
+    </div>
+
+    <!-- Ecran d'accès refusé -->
+    <div id="accessDenied" class="hidden fixed inset-0 bg-slate-950/95 z-[100] flex flex-col items-center justify-center gap-4 text-center p-6 fade-in">
+        <div class="w-16 h-16 rounded-2xl bg-red-900/30 border border-red-500/30 flex items-center justify-center text-3xl">🔒</div>
+        <h1 class="text-xl font-bold text-white">Accès réservé aux administrateurs</h1>
+        <p class="text-slate-500 text-sm max-w-sm">Cette page contient des données financières sensibles. Redirection vers l'accueil...</p>
+        <a href="index.html" class="mt-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl transition text-sm font-bold">Retour à l'accueil</a>
+    </div>
+
+    <!-- Contenu principal (masqué tant que l'admin n'est pas confirmé) -->
+    <div id="comptaContent" class="hidden max-w-7xl mx-auto fade-in">
+
+        <!-- Header -->
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
+                <img src="french.png" alt="Logo La French" class="w-16 h-16 object-contain drop-shadow-xl" onerror="this.style.display='none'">
+                LAFRENCH <span class="text-slate-500 font-light">| Comptabilité</span>
+            </h1>
+            <div class="flex flex-wrap gap-3 justify-center">
+                <a href="classement.html" class="bg-indigo-900/40 border border-indigo-500/30 hover:bg-indigo-600 text-indigo-300 hover:text-white px-4 py-2.5 rounded-xl transition text-sm font-bold flex items-center gap-2 shadow-lg">👤 Classement</a>
+                <a href="groupes.html" class="bg-amber-900/30 border border-amber-500/30 hover:bg-amber-600 text-amber-300 hover:text-white px-4 py-2.5 rounded-xl transition text-sm font-bold flex items-center gap-2 shadow-lg">🚩 Groupes</a>
+                <a href="index.html" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl transition text-sm font-bold flex items-center gap-2 shadow-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Retour à la Draft
+                </a>
+            </div>
+        </div>
+
+        <!-- KPIs principaux -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+                <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">💰 Banque Globale</div>
+                <div id="kpiBankroll" class="text-3xl font-black text-white">0$</div>
+                <div id="kpiBankrollTrend" class="text-[11px] mt-1 text-slate-500">Résultat net cumulé</div>
+            </div>
+            <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+                <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">⚠️ Paris en attente</div>
+                <div id="kpiLiability" class="text-3xl font-black text-amber-400">0$</div>
+                <div id="kpiLiabilityCount" class="text-[11px] mt-1 text-slate-500">0 paris à payer</div>
+            </div>
+            <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+                <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">🎫 Total Misé</div>
+                <div id="kpiWagered" class="text-3xl font-black text-white">0$</div>
+                <div id="kpiBetsCount" class="text-[11px] mt-1 text-slate-500">0 paris enregistrés</div>
+            </div>
+            <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+                <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">🎯 Mise Moyenne</div>
+                <div id="kpiAvgBet" class="text-3xl font-black text-white">0$</div>
+                <div id="kpiMatchesCount" class="text-[11px] mt-1 text-slate-500">sur 0 matchs</div>
+            </div>
+        </div>
+
+        <!-- Meilleur / Pire match -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="bg-emerald-900/10 p-5 rounded-2xl border border-emerald-500/20 shadow-xl backdrop-blur-sm flex justify-between items-center">
+                <div>
+                    <div class="text-emerald-400 text-[11px] font-bold uppercase tracking-wider mb-1">🏆 Meilleur match (gain)</div>
+                    <div id="bestMatchTeams" class="text-sm font-semibold text-slate-300">Aucune donnée</div>
+                    <div id="bestMatchDate" class="text-[11px] text-slate-500"></div>
+                </div>
+                <div id="bestMatchPnl" class="text-2xl font-black text-emerald-400 shrink-0">+0$</div>
+            </div>
+            <div class="bg-red-900/10 p-5 rounded-2xl border border-red-500/20 shadow-xl backdrop-blur-sm flex justify-between items-center">
+                <div>
+                    <div class="text-red-400 text-[11px] font-bold uppercase tracking-wider mb-1">📉 Pire match (perte)</div>
+                    <div id="worstMatchTeams" class="text-sm font-semibold text-slate-300">Aucune donnée</div>
+                    <div id="worstMatchDate" class="text-[11px] text-slate-500"></div>
+                </div>
+                <div id="worstMatchPnl" class="text-2xl font-black text-red-400 shrink-0">0$</div>
+            </div>
+        </div>
+
+        <!-- Graphique évolution -->
+        <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm mb-6">
+            <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">📊 Évolution de la Banque</h2>
+            <div class="relative h-[280px] w-full">
+                <canvas id="bankrollChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Historique financier + Paris en attente -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8">
+            
+            <div class="lg:col-span-2 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+                <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">📜 Historique financier des matchs</h2>
+                <ul id="matchFinanceList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2 text-sm"></ul>
+            </div>
+
+            <div class="lg:col-span-1 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+                <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">⚠️ Paris en attente de paiement</h2>
+                <ul id="unpaidBetsList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2 text-sm"></ul>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgiapnMdkb8FSF68Od6D4l0eVFAqZh_yI",
+            authDomain: "french-bet.firebaseapp.com",
+            databaseURL: "https://french-bet-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "french-bet",
+            storageBucket: "french-bet.firebasestorage.app",
+            messagingSenderId: "136214016140",
+            appId: "1:136214016140:web:6ab1c7f494df6c200c0ba9",
+            measurementId: "G-MXF7B7Y3TG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        let dataLoaded = false;
+        let liveHistory = [];
+        let archivedMatches = [];
+        let isLiveReady = false;
+        let isArchivesReady = false;
+        let chartInstance = null;
+
+        // -----------------------------------------
+        // SECURITE D'ACCES
+        // -----------------------------------------
+        onAuthStateChanged(auth, (user) => {
+            document.getElementById('checkingAuth').classList.add('hidden');
+            if (user) {
+                document.getElementById('accessDenied').classList.add('hidden');
+                document.getElementById('comptaContent').classList.remove('hidden');
+                if (dataLoaded) render();
+            } else {
+                document.getElementById('comptaContent').classList.add('hidden');
+                document.getElementById('accessDenied').classList.remove('hidden');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+            }
+        });
+
+        // -----------------------------------------
+        // RECUPERATION DES DONNEES (history + sessions archivées)
+        // -----------------------------------------
+        function checkAndProcess() {
+            if (isLiveReady && isArchivesReady) {
+                dataLoaded = true;
+                if (auth.currentUser) render();
+            }
+        }
+
+        onValue(ref(db, 'history'), (snapshot) => {
+            const data = snapshot.val();
+            liveHistory = [];
+            if (data) {
+                for (let key in data) {
+                    if (data[key] && data[key].teamA_names) liveHistory.push({ id: key, ...data[key] });
+                }
+            }
+            isLiveReady = true;
+            checkAndProcess();
+        });
+
+        onValue(ref(db, 'sessions'), (snapshot) => {
+            const data = snapshot.val();
+            archivedMatches = [];
+            if (data) {
+                for (let sKey in data) {
+                    const session = data[sKey];
+                    if (session && session.matches) {
+                        for (let mKey in session.matches) {
+                            if (session.matches[mKey] && typeof session.matches[mKey] === 'object') {
+                                archivedMatches.push({ id: mKey, ...session.matches[mKey] });
+                            }
+                        }
+                    }
+                }
+            }
+            isArchivesReady = true;
+            checkAndProcess();
+        });
+
+        // -----------------------------------------
+        // UTILITAIRES
+        // -----------------------------------------
+        function fmt(n) {
+            const rounded = Math.round(n);
+            return rounded.toLocaleString('fr-FR');
+        }
+
+        function fmtSigned(n) {
+            const rounded = Math.round(n);
+            return (rounded > 0 ? '+' : '') + rounded.toLocaleString('fr-FR') + '$';
+        }
+
+        function formatDateShort(ts) {
+            const d = new Date(ts);
+            return `${d.getDate()}/${d.getMonth() + 1}`;
+        }
+
+        function formatDateFull(ts) {
+            return new Date(ts).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // -----------------------------------------
+        // CALCUL & RENDU
+        // -----------------------------------------
+        function render() {
+            const allMatches = [...archivedMatches, ...liveHistory].sort((a, b) => a.timestamp - b.timestamp);
+
+            let totalPnL = 0;
+            let totalWagered = 0;
+            let totalBets = 0;
+            let unpaidLiability = 0;
+            let unpaidBets = [];
+            let cumulative = 0;
+            let chartPoints = [];
+            let matchFinance = [];
+
+            allMatches.forEach(m => {
+                let matchPnL = 0;
+                let matchWagered = 0;
+                let matchBetsCount = 0;
+
+                if (m.bets) {
+                    Object.entries(m.bets).forEach(([betId, bet]) => {
+                        matchWagered += (bet.amount || 0);
+                        matchBetsCount++;
+
+                        if (bet.team === m.winner) {
+                            matchPnL -= ((bet.potentialWin || 0) - (bet.amount || 0));
+                            if (!bet.paid) {
+                                unpaidLiability += (bet.potentialWin || 0);
+                                unpaidBets.push({
+                                    ...bet,
+                                    matchTimestamp: m.timestamp,
+                                    matchTeams: bet.team === 'A' ? m.teamA_names : m.teamB_names
+                                });
+                            }
+                        } else {
+                            matchPnL += (bet.amount || 0);
+                        }
+                    });
+                }
+
+                totalPnL += matchPnL;
+                totalWagered += matchWagered;
+                totalBets += matchBetsCount;
+                cumulative += matchPnL;
+
+                chartPoints.push({ x: formatDateShort(m.timestamp), y: Math.round(cumulative) });
+                matchFinance.push({ ...m, pnl: matchPnL, wagered: matchWagered, betsCount: matchBetsCount });
+            });
+
+            // --- KPIs ---
+            const bankrollEl = document.getElementById('kpiBankroll');
+            bankrollEl.innerText = (totalPnL >= 0 ? '+' : '') + fmt(totalPnL) + '$';
+            bankrollEl.className = "text-3xl font-black " + (totalPnL > 0 ? 'text-emerald-400' : (totalPnL < 0 ? 'text-red-500' : 'text-white'));
+
+            document.getElementById('kpiLiability').innerText = fmt(unpaidLiability) + '$';
+            document.getElementById('kpiLiabilityCount').innerText = `${unpaidBets.length} pari${unpaidBets.length > 1 ? 's' : ''} à payer`;
+
+            document.getElementById('kpiWagered').innerText = fmt(totalWagered) + '$';
+            document.getElementById('kpiBetsCount').innerText = `${totalBets} pari${totalBets > 1 ? 's' : ''} enregistrés`;
+
+            const avgBet = totalBets > 0 ? totalWagered / totalBets : 0;
+            document.getElementById('kpiAvgBet').innerText = fmt(avgBet) + '$';
+            document.getElementById('kpiMatchesCount').innerText = `sur ${allMatches.length} match${allMatches.length > 1 ? 's' : ''}`;
+
+            // --- Meilleur / Pire match ---
+            const matchesWithBets = matchFinance.filter(m => m.betsCount > 0);
+            if (matchesWithBets.length > 0) {
+                const best = matchesWithBets.reduce((a, b) => b.pnl > a.pnl ? b : a);
+                const worst = matchesWithBets.reduce((a, b) => b.pnl < a.pnl ? b : a);
+
+                document.getElementById('bestMatchTeams').innerText = `${best.teamA_names} vs ${best.teamB_names}`;
+                document.getElementById('bestMatchDate').innerText = formatDateFull(best.timestamp);
+                document.getElementById('bestMatchPnl').innerText = fmtSigned(best.pnl);
+
+                document.getElementById('worstMatchTeams').innerText = `${worst.teamA_names} vs ${worst.teamB_names}`;
+                document.getElementById('worstMatchDate').innerText = formatDateFull(worst.timestamp);
+                document.getElementById('worstMatchPnl').innerText = fmtSigned(worst.pnl);
+            }
+
+            // --- Graphique ---
+            if (chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('bankrollChart').getContext('2d');
+
+            const displayPoints = chartPoints.length > 0 ? chartPoints : [{ x: '—', y: 0 }];
+            const lineColor = totalPnL >= 0 ? '#34d399' : '#f87171';
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: displayPoints.map(p => p.x),
+                    datasets: [{
+                        label: 'Banque cumulée',
+                        data: displayPoints.map(p => p.y),
+                        borderColor: lineColor,
+                        backgroundColor: totalPnL >= 0 ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: lineColor,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: lineColor,
+                        pointRadius: displayPoints.length > 40 ? 0 : 3,
+                        fill: true,
+                        tension: 0.25
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#cbd5e1',
+                            bodyColor: '#fff',
+                            bodyFont: { weight: 'bold' },
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: (ctx) => `${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y}$`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(51, 65, 85, 0.5)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { family: 'Inter' }, callback: (v) => v + '$' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b', font: { family: 'Inter' }, maxTicksLimit: 10 }
+                        }
+                    }
+                }
+            });
+
+            // --- Liste historique financier (matchs récents en premier) ---
+            const listEl = document.getElementById('matchFinanceList');
+            listEl.innerHTML = '';
+            const reversedFinance = [...matchFinance].reverse();
+
+            if (reversedFinance.length === 0) {
+                listEl.innerHTML = '<li class="text-slate-500 text-center italic py-4">Aucun match enregistré</li>';
+            } else {
+                reversedFinance.forEach(m => {
+                    const isPositive = m.pnl > 0;
+                    const isZero = m.pnl === 0;
+                    const borderCol = isZero ? 'border-slate-700/50' : (isPositive ? 'border-emerald-500/30 bg-emerald-900/10' : 'border-red-500/30 bg-red-900/10');
+                    const pnlColor = isZero ? 'text-slate-400' : (isPositive ? 'text-emerald-400' : 'text-red-400');
+
+                    const li = document.createElement('li');
+                    li.className = `p-4 rounded-xl border ${borderCol} flex justify-between items-center gap-3 shadow-sm`;
+                    li.innerHTML = `
+                        <div class="min-w-0">
+                            <div class="font-semibold text-slate-200 truncate text-sm">
+                                <span class="${m.winner === 'A' ? 'text-blue-400 font-bold' : 'text-slate-500'}">${m.teamA_names}</span>
+                                <span class="text-slate-600 mx-1">vs</span>
+                                <span class="${m.winner === 'B' ? 'text-red-400 font-bold' : 'text-slate-500'}">${m.teamB_names}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 mt-1">${formatDateFull(m.timestamp)} · ${m.betsCount} pari${m.betsCount > 1 ? 's' : ''} · ${fmt(m.wagered)}$ misés</div>
+                        </div>
+                        <div class="text-lg font-black ${pnlColor} shrink-0">${fmtSigned(m.pnl)}</div>
+                    `;
+                    listEl.appendChild(li);
+                });
+            }
+
+            // --- Liste paris en attente ---
+            const unpaidListEl = document.getElementById('unpaidBetsList');
+            unpaidListEl.innerHTML = '';
+            unpaidBets.sort((a, b) => b.matchTimestamp - a.matchTimestamp);
+
+            if (unpaidBets.length === 0) {
+                unpaidListEl.innerHTML = '<li class="text-slate-500 text-center italic py-4">Tous les paris sont réglés ✅</li>';
+            } else {
+                unpaidBets.forEach(bet => {
+                    const li = document.createElement('li');
+                    li.className = "bg-amber-900/10 border border-amber-500/20 p-3 rounded-xl";
+                    li.innerHTML = `
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <div class="font-bold text-white truncate">${bet.user}</div>
+                                <div class="text-[11px] text-slate-500 truncate">${bet.matchTeams || ''}</div>
+                                <div class="text-[10px] text-slate-600">${formatDateFull(bet.matchTimestamp)}</div>
+                            </div>
+                            <div class="text-amber-400 font-black shrink-0">${fmt(bet.potentialWin)}$</div>
+                        </div>
+                    `;
+                    unpaidListEl.appendChild(li);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
