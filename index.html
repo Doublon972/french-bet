@@ -25,8 +25,9 @@
         </h1>
         
         <div class="flex flex-wrap gap-3 items-center justify-center md:justify-end">
-            <div id="adminPnlDisplay" class="admin-only hidden bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-sm shadow-lg">
-                Banque Globale : <span class="text-slate-400 font-black">0$</span>
+            <div id="adminPnlDisplay" onclick="window.location.href='compta.html'" class="admin-only hidden bg-slate-800 border border-slate-700 hover:bg-slate-700 hover:border-emerald-500/40 px-4 py-2 rounded-xl text-sm shadow-lg transition cursor-pointer flex items-center gap-2 group" title="Voir la comptabilité détaillée">
+                <span>Banque Globale : <span id="pnlAmountValue" class="text-slate-400 font-black">0$</span></span>
+                <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </div>
 
             <div id="statusBadge" class="bg-slate-800 border border-slate-600 px-4 py-1.5 rounded-full text-xs font-bold text-slate-400">
@@ -903,13 +904,16 @@
                 totalPnL += (session.pnl || 0);
             });
 
-            const pnlElement = document.getElementById('adminPnlDisplay');
+            const pnlValueEl = document.getElementById('pnlAmountValue');
             if (totalPnL > 0) {
-                pnlElement.innerHTML = `Banque Globale : <span class="text-emerald-400 font-black">+${totalPnL.toFixed(0)}$</span>`;
+                pnlValueEl.className = "text-emerald-400 font-black";
+                pnlValueEl.innerText = `+${totalPnL.toFixed(0)}$`;
             } else if (totalPnL < 0) {
-                pnlElement.innerHTML = `Banque Globale : <span class="text-red-500 font-black">${totalPnL.toFixed(0)}$</span>`;
+                pnlValueEl.className = "text-red-500 font-black";
+                pnlValueEl.innerText = `${totalPnL.toFixed(0)}$`;
             } else {
-                pnlElement.innerHTML = `Banque Globale : <span class="text-slate-400 font-black">0$</span>`;
+                pnlValueEl.className = "text-slate-400 font-black";
+                pnlValueEl.innerText = `0$`;
             }
         }
 
