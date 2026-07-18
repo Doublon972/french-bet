@@ -137,6 +137,7 @@
         let selectedGroupId = null;
         let searchTerm = "";
 
+        // Récupération des joueurs et construction des groupes
         onValue(ref(db, 'players'), (snapshot) => {
             const data = snapshot.val();
             players = [];
@@ -202,14 +203,13 @@
 
             players.forEach(p => {
                 const parts = p.name.split(' - ');
+                // On ignore les joueurs sans groupe
                 if (parts.length > 1) {
                     const gName = parts[0].trim();
                     if (!groupMap[gName]) {
-                        groupMap[gName] = { id: gName, name: gName, members: [], totalWins: 0, totalLosses: 0, totalElo: 0 };
+                        groupMap[gName] = { id: gName, name: gName, members: [], totalElo: 0 };
                     }
                     groupMap[gName].members.push(p);
-                    groupMap[gName].totalWins += p.wins;
-                    groupMap[gName].totalLosses += p.losses;
                     groupMap[gName].totalElo += p.elo;
                 }
             });
@@ -247,9 +247,6 @@
 
             sortedGroups.forEach((g) => {
                 if (!g.name.toLowerCase().includes(searchTerm)) return;
-
-                const totalGames = g.totalWins + g.totalLosses;
-                const winrate = totalGames === 0 ? 0 : Math.round((g.totalWins / totalGames) * 100);
                 
                 let rankColor = "text-slate-400";
                 if(g.rank === 1) rankColor = "text-yellow-400 font-black";
@@ -293,13 +290,7 @@
             let rankText = `${group.rank}${group.rank === 1 ? 'er' : 'ème'} sur ${groups.length} groupes`;
             document.getElementById('gRank').innerText = rankText;
 
-            const total = group.totalWins + group.totalLosses;
-            const winrate = total === 0 ? 0 : Math.round((group.totalWins / total) * 100);
-            
-            document.getElementById('gMembersCount').innerText = group.members.length;
-            document.getElementById('gTotalGames').innerText = total;
-            document.getElementById('gWinrate').innerText = `${winrate}%`;
-
+            // Rendu de la liste des membres
             const membersListEl = document.getElementById('gMembersList');
             membersListEl.innerHTML = '';
             
@@ -317,6 +308,7 @@
                 membersListEl.appendChild(li);
             });
 
+            // Filtrage des matchs incluant n'importe quel membre du groupe
             const memberIds = group.members.map(m => m.id);
             const memberNames = group.members.map(m => m.name);
 
@@ -328,8 +320,41 @@
                 return inTeamAIds || inTeamBIds || inTeamANames || inTeamBNames;
             });
 
+            // --- CALCUL PROPRE DES MATCHS GLOBAUX ---
+            let realGroupWins = 0;
+            let validMatchesForWinrate = 0;
+
+            groupMatches.forEach(m => {
+                let groupInA = false;
+                let groupInB = false;
+
+                // Est-ce qu'au moins 1 membre est dans A ou B ?
+                group.members.forEach(member => {
+                    if ((m.teamA_ids && m.teamA_ids.includes(member.id)) || (!m.teamA_ids && m.teamA_names && m.teamA_names.includes(member.name))) groupInA = true;
+                    if ((m.teamB_ids && m.teamB_ids.includes(member.id)) || (!m.teamB_ids && m.teamB_names && m.teamB_names.includes(member.name))) groupInB = true;
+                });
+
+                // Si le groupe affronte des joueurs extérieurs (et non lui-même)
+                if (groupInA && !groupInB) {
+                    validMatchesForWinrate++;
+                    if (m.winner === 'A') realGroupWins++;
+                } else if (!groupInA && groupInB) {
+                    validMatchesForWinrate++;
+                    if (m.winner === 'B') realGroupWins++;
+                }
+                // Si groupInA && groupInB -> Guerre Civile -> le groupe a gagné contre lui-même -> ignoré du Winrate pour ne pas le fausser.
+            });
+
+            const realTotalGames = groupMatches.length; // 1 match joué à plusieurs de la meme team = 1 seul match affiché.
+            const winrate = validMatchesForWinrate === 0 ? 0 : Math.round((realGroupWins / validMatchesForWinrate) * 100);
+
+            document.getElementById('gMembersCount').innerText = group.members.length;
+            document.getElementById('gTotalGames').innerText = realTotalGames;
+            document.getElementById('gWinrate').innerText = `${winrate}%`;
+
             const reversedMatches = [...groupMatches].reverse();
 
+            // Machine à remonter le temps pour calculer l'historique de la moyenne Elo du groupe
             let currentElos = {};
             group.members.forEach(m => currentElos[m.id] = m.elo);
 
@@ -379,7 +404,7 @@
                     datasets: [{
                         label: 'Moyenne Elo du Groupe',
                         data: chartData.map(d => d.y),
-                        borderColor: '#f59e0b',
+                        borderColor: '#f59e0b', // Amber 500
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         borderWidth: 3,
                         pointBackgroundColor: '#fbbf24',
@@ -441,6 +466,7 @@
                     const teamAHTML = formatTeamForGroup(m.teamA_names);
                     const teamBHTML = formatTeamForGroup(m.teamB_names);
 
+                    // Calcul de victoire "Globale" (pour l'affichage graphique de la bordure). 
                     let groupMembersInA = false;
                     let groupMembersInB = false;
 
