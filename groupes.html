@@ -137,7 +137,6 @@
         let selectedGroupId = null;
         let searchTerm = "";
 
-        // Récupération des joueurs et construction des groupes
         onValue(ref(db, 'players'), (snapshot) => {
             const data = snapshot.val();
             players = [];
@@ -203,7 +202,6 @@
 
             players.forEach(p => {
                 const parts = p.name.split(' - ');
-                // On ignore les joueurs sans groupe
                 if (parts.length > 1) {
                     const gName = parts[0].trim();
                     if (!groupMap[gName]) {
@@ -302,7 +300,6 @@
             document.getElementById('gTotalGames').innerText = total;
             document.getElementById('gWinrate').innerText = `${winrate}%`;
 
-            // Rendu de la liste des membres
             const membersListEl = document.getElementById('gMembersList');
             membersListEl.innerHTML = '';
             
@@ -320,7 +317,6 @@
                 membersListEl.appendChild(li);
             });
 
-            // Filtrage des matchs incluant n'importe quel membre du groupe
             const memberIds = group.members.map(m => m.id);
             const memberNames = group.members.map(m => m.name);
 
@@ -334,7 +330,6 @@
 
             const reversedMatches = [...groupMatches].reverse();
 
-            // Machine à remonter le temps pour calculer l'historique de la moyenne Elo du groupe
             let currentElos = {};
             group.members.forEach(m => currentElos[m.id] = m.elo);
 
@@ -384,7 +379,7 @@
                     datasets: [{
                         label: 'Moyenne Elo du Groupe',
                         data: chartData.map(d => d.y),
-                        borderColor: '#f59e0b', // Amber 500
+                        borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         borderWidth: 3,
                         pointBackgroundColor: '#fbbf24',
@@ -446,8 +441,6 @@
                     const teamAHTML = formatTeamForGroup(m.teamA_names);
                     const teamBHTML = formatTeamForGroup(m.teamB_names);
 
-                    // Calcul de victoire "Globale" (pour l'affichage graphique de la bordure). 
-                    // Si un membre du groupe est dans l'équipe gagnante, c'est une victoire. (Si des membres sont dans les deux équipes opposées, c'est neutre/gris).
                     let groupMembersInA = false;
                     let groupMembersInB = false;
 
@@ -457,28 +450,48 @@
                     });
 
                     let borderCol = 'border-slate-700/50';
-                    if (groupMembersInA && !groupMembersInB) borderCol = m.winner === 'A' ? 'border-emerald-500/30 bg-emerald-900/10' : 'border-red-500/30 bg-red-900/10';
-                    else if (!groupMembersInA && groupMembersInB) borderCol = m.winner === 'B' ? 'border-emerald-500/30 bg-emerald-900/10' : 'border-red-500/30 bg-red-900/10';
-                    else if (groupMembersInA && groupMembersInB) borderCol = 'border-slate-500/30 bg-slate-800/30'; // Civil war
+                    let statusBadge = '';
+
+                    if (groupMembersInA && !groupMembersInB) {
+                        if (m.winner === 'A') {
+                            borderCol = 'border-emerald-500/40 bg-emerald-900/20';
+                            statusBadge = '<span class="text-emerald-400 font-bold flex items-center gap-1"><span class="text-lg">✅</span> Victoire</span>';
+                        } else {
+                            borderCol = 'border-red-500/40 bg-red-900/20';
+                            statusBadge = '<span class="text-red-400 font-bold flex items-center gap-1"><span class="text-lg">❌</span> Défaite</span>';
+                        }
+                    } else if (!groupMembersInA && groupMembersInB) {
+                        if (m.winner === 'B') {
+                            borderCol = 'border-emerald-500/40 bg-emerald-900/20';
+                            statusBadge = '<span class="text-emerald-400 font-bold flex items-center gap-1"><span class="text-lg">✅</span> Victoire</span>';
+                        } else {
+                            borderCol = 'border-red-500/40 bg-red-900/20';
+                            statusBadge = '<span class="text-red-400 font-bold flex items-center gap-1"><span class="text-lg">❌</span> Défaite</span>';
+                        }
+                    } else if (groupMembersInA && groupMembersInB) {
+                        borderCol = 'border-amber-500/40 bg-amber-900/10';
+                        statusBadge = '<span class="text-amber-400 font-bold flex items-center gap-1"><span class="text-lg">⚔️</span> Guerre Civile</span>';
+                    }
 
                     const li = document.createElement('li');
-                    li.className = `p-3 rounded-xl border ${borderCol} flex flex-col text-sm shadow-sm relative overflow-hidden transition-all hover:bg-slate-800/50`;
+                    li.className = `p-3 rounded-xl border ${borderCol} flex flex-col text-sm shadow-sm relative overflow-hidden transition-all hover:brightness-110`;
                     
                     li.innerHTML = `
                         <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-700/50">
                             <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
                                 <span class="uppercase tracking-wider opacity-80">${dateStr}</span>
                             </div>
+                            <div class="text-sm tracking-wider uppercase">${statusBadge}</div>
                         </div>
                         
                         <div class="flex justify-between items-center gap-2 w-full">
-                            <div class="w-[45%] text-right ${m.winner === 'A' ? 'text-slate-200' : 'text-slate-500'} text-xs leading-relaxed break-words">
+                            <div class="w-[45%] text-right ${m.winner === 'A' ? 'text-slate-200 font-bold' : 'text-slate-500'} text-xs leading-relaxed break-words">
                                 ${teamAHTML}
                             </div>
                             <div class="w-[10%] flex justify-center shrink-0">
                                 <span class="text-[9px] font-black text-slate-600 bg-slate-900 px-1.5 py-0.5 rounded shadow-inner">VS</span>
                             </div>
-                            <div class="w-[45%] text-left ${m.winner === 'B' ? 'text-slate-200' : 'text-slate-500'} text-xs leading-relaxed break-words">
+                            <div class="w-[45%] text-left ${m.winner === 'B' ? 'text-slate-200 font-bold' : 'text-slate-500'} text-xs leading-relaxed break-words">
                                 ${teamBHTML}
                             </div>
                         </div>
