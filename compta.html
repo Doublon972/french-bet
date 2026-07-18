@@ -253,7 +253,9 @@
 
                         if (bet.team === m.winner) {
                             matchPnL -= ((bet.potentialWin || 0) - (bet.amount || 0));
-                            if (!bet.paid) {
+                            // paid === false uniquement : les paris sans ce champ (ancien format)
+                            // ont tous été payés avant l'ajout de cette fonctionnalité.
+                            if (bet.paid === false) {
                                 unpaidLiability += (bet.potentialWin || 0);
                                 unpaidBets.push({
                                     ...bet,
