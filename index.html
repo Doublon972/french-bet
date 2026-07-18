@@ -276,6 +276,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCgiapnMdkb8FSF68Od6D4l0eVFAqZh_yI",
@@ -290,6 +291,8 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
+        let isAdmin = false;
 
         const playersRef = ref(db, 'players');
         const draftRef = ref(db, 'draft');
@@ -318,23 +321,30 @@
         // SYSTEME D'AUTHENTIFICATION
         // -----------------------------------------
         
-        let isAdmin = localStorage.getItem('arena_admin') === 'true';
-
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                isAdmin = true;
+            } else {
+                isAdmin = false;
+            }
+            updateAdminUI();
+        });
+        
         function updateAdminUI() {
             const adminElements = document.querySelectorAll('.admin-only');
             const guestElements = document.querySelectorAll('.guest-only');
             const badge = document.getElementById('statusBadge');
-
+        
             adminElements.forEach(el => {
                 if (isAdmin) el.classList.remove('hidden');
                 else el.classList.add('hidden');
             });
-
+        
             guestElements.forEach(el => {
                 if (!isAdmin) el.classList.remove('hidden');
                 else el.classList.add('hidden');
             });
-
+        
             if(isAdmin) {
                 badge.className = "bg-indigo-900/50 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold text-indigo-300";
                 badge.innerText = "Mode Administrateur";
@@ -342,7 +352,7 @@
                 badge.className = "bg-slate-800 border border-slate-600 px-4 py-1.5 rounded-full text-xs font-bold text-slate-400";
                 badge.innerText = "Mode Spectateur";
             }
-
+        
             renderDraftUI();
             renderLeaderboard();
             renderHistory();
@@ -351,10 +361,10 @@
         }
 
         window.openLoginModal = () => {
-            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
             document.getElementById('loginId').value = '';
             document.getElementById('loginPw').value = '';
-            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
         };
 
         window.closeLoginModal = () => {
@@ -362,26 +372,28 @@
         };
 
         window.attemptLogin = () => {
-            const id = document.getElementById('loginId').value;
+            // Attention : Assure-toi que les id dans ton HTML sont bien pour un email et un mot de passe
+            const email = document.getElementById('loginId').value; 
             const pw = document.getElementById('loginPw').value;
-
-            if (id === 'lafrench' && pw === 'lafrench123') {
-                isAdmin = true;
-                localStorage.setItem('arena_admin', 'true');
-                window.closeLoginModal();
-                updateAdminUI();
-            } else {
-                document.getElementById('loginError').classList.remove('hidden');
-            }
+            signInWithEmailAndPassword(auth, email, pw)
+                .then((userCredential) => {
+                    // Connexion réussie
+                    window.closeLoginModal();
+                    document.getElementById('loginError').classList.add('hidden');
+                })
+                .catch((error) => {
+                    // Échec de la connexion
+                    document.getElementById('loginError').classList.remove('hidden');
+                    console.error("Erreur d'authentification", error);
+                });
         };
-
         window.logoutAdmin = () => {
-            isAdmin = false;
-            localStorage.removeItem('arena_admin');
-            updateAdminUI();
+            signOut(auth).then(() => {
+                // Déconnexion réussie, onAuthStateChanged va automatiquement mettre isAdmin à false
+            }).catch((error) => {
+                console.error("Erreur lors de la déconnexion", error);
+            });
         };
-
-        updateAdminUI();
 
         // -----------------------------------------
         // ECOUTEURS FIREBASE
