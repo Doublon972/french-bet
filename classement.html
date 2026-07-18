@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; overflow: hidden; /* Empêche le scroll sur toute la page */ }
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 6px; }
@@ -19,33 +19,35 @@
 </head>
 <body class="bg-slate-900 text-slate-200 h-screen p-4 md:p-8 flex flex-col">
 
-    <!-- Header (Ne scrolle jamais) -->
-    <div class="max-w-7xl mx-auto w-full shrink-0 mb-6 flex justify-between items-center">
+    <!-- Header -->
+    <div class="max-w-7xl mx-auto w-full shrink-0 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
             <img src="french.png" alt="Logo La French" class="w-16 h-16 object-contain drop-shadow-xl" onerror="this.style.display='none'">
-            LAFRENCH <span class="text-slate-500 font-light">| Données des enculés</span>
+            LAFRENCH <span class="text-slate-500 font-light">| Data Center</span>
         </h1>
         
-        <a href="index.html" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl transition font-bold flex items-center gap-2 shadow-lg">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Retour
-        </a>
+        <div class="flex gap-3">
+            <a href="groupes.html" class="bg-indigo-900/40 border border-indigo-500/30 hover:bg-indigo-600 text-indigo-300 hover:text-white px-5 py-2.5 rounded-xl transition font-bold flex items-center gap-2 shadow-lg">
+                👥 Classement Groupes
+            </a>
+            <a href="index.html" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl transition font-bold flex items-center gap-2 shadow-lg">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Retour à l'Arène
+            </a>
+        </div>
     </div>
 
-    <!-- Conteneur principal (Prend la hauteur restante) -->
+    <!-- Conteneur principal -->
     <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-8 flex-grow h-0 pb-4">
         
         <!-- Colonne Classement -->
         <div class="lg:col-span-1 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm flex flex-col h-full overflow-hidden">
-            <h2 class="text-lg font-semibold mb-4 text-white shrink-0">🏆 Classement</h2>
+            <h2 class="text-lg font-semibold mb-4 text-white shrink-0">🏆 Classement Individuel</h2>
             <div class="relative mb-4 shrink-0">
                 <input type="text" id="searchInput" oninput="window.filterLeaderboard(this.value)" placeholder="Rechercher..." class="w-full p-2.5 pl-9 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
                 <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
-            <!-- La liste avec le scroll interne -->
-            <ul id="fullLeaderboard" class="space-y-3 overflow-y-auto pr-2 flex-grow h-0">
-                <!-- Rempli par JS -->
-            </ul>
+            <ul id="fullLeaderboard" class="space-y-3 overflow-y-auto pr-2 flex-grow h-0"></ul>
         </div>
 
         <!-- Colonne Détails Joueur -->
@@ -57,7 +59,6 @@
             </div>
 
             <div id="playerDashboard" class="hidden flex flex-col h-full fade-in overflow-y-auto pr-2">
-                <!-- En-tête -->
                 <div class="flex justify-between items-end mb-6 pb-6 border-b border-slate-700 shrink-0">
                     <div class="flex items-center gap-4">
                         <div id="pInitial" class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-black text-white shadow-lg shadow-indigo-500/30 shrink-0"></div>
@@ -72,7 +73,6 @@
                     </div>
                 </div>
 
-                <!-- Stats Cards -->
                 <div class="grid grid-cols-3 gap-4 mb-6 shrink-0">
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50">
                         <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Matchs</div>
@@ -88,7 +88,6 @@
                     </div>
                 </div>
 
-                <!-- Graphique & Historique -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow min-h-[300px]">
                     <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50 flex flex-col h-full overflow-hidden">
                         <h3 class="text-sm font-bold text-slate-300 mb-4 shrink-0">Évolution de l'Elo</h3>
@@ -280,7 +279,6 @@
 
             const reversedMatches = [...playerMatches].reverse();
 
-            // Série (Streak)
             let streak = 0;
             let currentStatus = null; 
             
@@ -303,7 +301,6 @@
                 streakEl.innerHTML = `<span class="text-red-400">${streak} Défaite${streak>1?'s':''} 🧊</span>`;
             }
 
-            // Courbe Elo 
             let currentEloForChart = player.elo;
             let chartData = [{ x: 'Actuel', y: Math.round(currentEloForChart) }];
 
@@ -379,7 +376,6 @@
                 }
             });
 
-            // Historique texte
             const historyList = document.getElementById('pMatchHistory');
             historyList.innerHTML = '';
 
@@ -392,7 +388,7 @@
                     
                     const borderCol = isWin ? 'border-emerald-500/30 bg-emerald-900/10' : 'border-red-500/30 bg-red-900/10';
                     const icon = isWin ? '✅' : '❌';
-                    const dateStr = new Date(m.timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+                    const dateStr = new Date(m.timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
                     let eloTxt = '';
                     if(m.eloChanges && m.eloChanges[id] !== undefined) {
@@ -403,7 +399,6 @@
                         eloTxt = delta > 0 ? `<span class="text-emerald-400 font-bold">~+${delta}</span>` : `<span class="text-red-400 font-bold">~${delta}</span>`;
                     }
 
-                    // Formatage en "badge" pour faire ressortir le joueur sélectionné
                     const highlightBadge = `<span class="inline-block bg-indigo-500/30 text-white font-black px-1.5 py-0.5 rounded-md border border-indigo-500/50 shadow-sm mx-0.5">${player.name}</span>`;
                     
                     const formatTeam = (teamStr) => {
@@ -418,7 +413,6 @@
                     li.className = `p-3 rounded-xl border ${borderCol} flex flex-col text-sm shadow-sm relative overflow-hidden transition-all hover:bg-slate-800/30`;
                     
                     li.innerHTML = `
-                        <!-- Ligne du haut : Date, Icône et Élo -->
                         <div class="flex justify-between items-center mb-2 pb-2 border-b ${isWin ? 'border-emerald-500/20' : 'border-red-500/20'}">
                             <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
                                 <span class="text-base">${icon}</span>
@@ -427,7 +421,6 @@
                             <div class="text-sm">${eloTxt}</div>
                         </div>
                         
-                        <!-- Ligne du bas : Équipes avec wrapping autorisé -->
                         <div class="flex justify-between items-center gap-2 w-full">
                             <div class="w-[45%] text-right ${m.winner === 'A' ? 'text-slate-200' : 'text-slate-500'} text-xs leading-relaxed break-words">
                                 ${teamAHTML}
