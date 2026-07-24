@@ -1,6 +1,6 @@
 <div class="fixed top-8 left-1/2 -translate-x-1/2 z-40">
   @if (matchBanner(); as match) {
-    <app-match-announce-popup [teamA]="match.teamA" [teamB]="match.teamB" [oddsA]="match.oddsA" [oddsB]="match.oddsB" />
+    <app-match-announce-popup [teamA]="match.teamA" [teamB]="match.teamB" [oddsA]="match.oddsA" [oddsB]="match.oddsB" [probA]="match.probA" />
   }
 </div>
 
@@ -22,5 +22,11 @@
         <app-elo-record-popup [record]="event.record" />
       }
     }
+  }
+</div>
+
+<div class="fixed bottom-8 left-8 z-30">
+  @if (isIdle()) {
+    <app-idle-ticker />
   }
 </div>

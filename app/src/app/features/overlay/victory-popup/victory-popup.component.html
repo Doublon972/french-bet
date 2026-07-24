@@ -1,5 +1,9 @@
+@if (isUpset()) {
+  <div class="fixed inset-0 overlay-flash pointer-events-none" [class]="winnerSide === 'A' ? 'bg-blue-400/25' : 'bg-red-400/25'"></div>
+}
+
 <div
-  class="overlay-shine relative overflow-hidden rounded-2xl shadow-2xl min-w-[520px] text-center backdrop-blur-md border-2"
+  class="broadcast-card overlay-shine relative overflow-hidden shadow-2xl min-w-[540px] text-center backdrop-blur-md border-2"
   [class]="winnerSide === 'A'
     ? 'bg-gradient-to-b from-blue-950/95 to-slate-950/95 border-blue-400/60 shadow-blue-500/40'
     : 'bg-gradient-to-b from-red-950/95 to-slate-950/95 border-red-400/60 shadow-red-500/40'"
@@ -10,6 +14,11 @@
   ></div>
 
   <div class="px-10 py-7">
+    @if (isUpset()) {
+      <div class="inline-block mb-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+        ⚡ Upset !
+      </div>
+    }
     <div class="overlay-icon-pop text-5xl mb-1 drop-shadow-[0_0_18px_rgba(250,204,21,0.5)]">🏆</div>
     <div class="text-white/80 font-black uppercase tracking-[0.3em] text-xs mb-3">Victoire</div>
     <div

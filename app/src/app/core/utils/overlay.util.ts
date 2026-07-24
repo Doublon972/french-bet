@@ -54,6 +54,7 @@ export interface EloRecord {
   playerId: string;
   name: string;
   elo: number;
+  previousElo: number;
   rank: number;
 }
 
@@ -94,7 +95,13 @@ export function computeEloRecords(players: Player[], allMatchesAscending: Histor
 
     if (hasPriorMatch && player.elo > historicalMax) {
       const rank = rankedAfter.find((p) => p.id === id)?.rank ?? 0;
-      records.push({ playerId: id, name: player.name, elo: Math.round(player.elo), rank });
+      records.push({
+        playerId: id,
+        name: player.name,
+        elo: Math.round(player.elo),
+        previousElo: Math.round(beforeElo),
+        rank,
+      });
     }
   }
   return records;

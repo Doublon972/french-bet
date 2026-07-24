@@ -1,6 +1,7 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject } from '@angular/core';
 import { OverlayEventsService } from '../../core/services/overlay-events.service';
 import { EloRecordPopupComponent } from './elo-record-popup/elo-record-popup.component';
+import { IdleTickerComponent } from './idle-ticker/idle-ticker.component';
 import { MatchAnnouncePopupComponent } from './match-announce-popup/match-announce-popup.component';
 import { RankMovementPopupComponent } from './rank-movement-popup/rank-movement-popup.component';
 import { VictoryPopupComponent } from './victory-popup/victory-popup.component';
@@ -11,7 +12,13 @@ const BODY_BG_CLASSES = ['bg-slate-900', 'text-slate-200', 'min-h-screen'];
 @Component({
   selector: 'app-overlay-page',
   standalone: true,
-  imports: [MatchAnnouncePopupComponent, VictoryPopupComponent, RankMovementPopupComponent, EloRecordPopupComponent],
+  imports: [
+    MatchAnnouncePopupComponent,
+    VictoryPopupComponent,
+    RankMovementPopupComponent,
+    EloRecordPopupComponent,
+    IdleTickerComponent,
+  ],
   templateUrl: './overlay-page.component.html',
   host: { class: 'block' },
 })
@@ -20,6 +27,7 @@ export class OverlayPageComponent implements OnInit, OnDestroy {
 
   readonly current = this.eventsService.current;
   readonly matchBanner = this.eventsService.matchBanner;
+  readonly isIdle = computed(() => !this.matchBanner() && !this.current());
 
   ngOnInit(): void {
     document.body.classList.remove(...BODY_BG_CLASSES);
