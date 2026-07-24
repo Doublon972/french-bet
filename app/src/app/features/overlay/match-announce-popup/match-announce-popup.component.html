@@ -1,0 +1,25 @@
+<div class="relative overflow-hidden rounded-2xl shadow-2xl shadow-indigo-950/60 min-w-[560px] backdrop-blur-md bg-gradient-to-b from-slate-900/95 to-slate-950/95 border border-indigo-500/40">
+  <div class="h-1 w-full bg-gradient-to-r from-indigo-500 via-violet-400 to-indigo-500"></div>
+
+  <div class="px-8 py-5 text-center">
+    <div class="flex items-center justify-center gap-2 mb-4">
+      <span class="relative flex h-2.5 w-2.5">
+        <span class="overlay-live-dot absolute inline-flex h-full w-full rounded-full bg-indigo-500"></span>
+        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-400"></span>
+      </span>
+      <span class="text-indigo-300 font-black uppercase tracking-[0.2em] text-xs">Combat en cours</span>
+    </div>
+
+    <div class="flex items-center justify-center gap-6">
+      <div class="flex-1 text-right">
+        <div class="text-blue-400 font-black text-2xl leading-tight drop-shadow-[0_0_12px_rgba(96,165,250,0.35)]">{{ names(teamA) }}</div>
+        <div class="text-blue-300/80 text-sm font-bold mt-1">Cote x{{ oddsA }}</div>
+      </div>
+      <div class="shrink-0 w-9 h-9 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-slate-400 font-black italic text-xs">VS</div>
+      <div class="flex-1 text-left">
+        <div class="text-red-400 font-black text-2xl leading-tight drop-shadow-[0_0_12px_rgba(248,113,113,0.35)]">{{ names(teamB) }}</div>
+        <div class="text-red-300/80 text-sm font-bold mt-1">Cote x{{ oddsB }}</div>
+      </div>
+    </div>
+  </div>
+</div>

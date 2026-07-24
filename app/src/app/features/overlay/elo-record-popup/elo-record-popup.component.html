@@ -1,0 +1,19 @@
+<div class="overlay-shine relative overflow-hidden rounded-2xl shadow-2xl shadow-amber-500/40 min-w-[460px] text-center backdrop-blur-md bg-gradient-to-b from-amber-950/90 to-slate-950/95 border-2 border-amber-400/60">
+  <div class="h-1.5 w-full bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-500"></div>
+
+  <div class="px-9 py-7">
+    <div class="overlay-icon-pop text-5xl mb-1 drop-shadow-[0_0_18px_rgba(251,191,36,0.6)]">🔥</div>
+    <div class="text-amber-300 font-black uppercase tracking-[0.25em] text-xs mb-3">Nouveau Record Personnel</div>
+    <div class="text-white font-black text-2xl leading-tight">{{ record.name }}</div>
+    <div class="text-amber-300 font-black text-4xl mt-2 drop-shadow-[0_0_18px_rgba(251,191,36,0.5)]">{{ record.elo }} pts</div>
+    @if (record.rank === 1) {
+      <div class="inline-flex items-center gap-1.5 mt-4 px-4 py-1 rounded-full bg-yellow-500/15 border border-yellow-400/50 text-yellow-300 font-black text-sm">
+        👑 #1 du classement !
+      </div>
+    } @else {
+      <div class="inline-block mt-4 px-4 py-1 rounded-full bg-slate-800/70 border border-slate-600 text-slate-400 font-bold text-sm">
+        #{{ record.rank }} du classement
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,130 @@
+<div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm transition-all">
+  <h2 class="text-xl font-bold mb-6 text-center text-white flex justify-center items-center gap-3">
+    <span class="relative flex h-3 w-3">
+      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+      <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+    </span>
+    Draft
+  </h2>
+
+  <div class="grid grid-cols-3 gap-4 text-sm font-medium text-slate-400 mb-2 text-center items-end">
+    <div class="pb-1">Équipe Bleue</div>
+    <div class="flex flex-col gap-2">
+      <span>Joueurs Disponibles</span>
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Rechercher un joueur..."
+        class="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500"
+      />
+    </div>
+    <div class="pb-1">Équipe Rouge</div>
+  </div>
+
+  <div cdkDropListGroup class="grid grid-cols-3 gap-4 h-[300px]">
+    <div
+      [id]="'teamA'"
+      cdkDropList
+      [cdkDropListData]="teamACards()"
+      (cdkDropListDropped)="drop($event)"
+      class="bg-blue-900/20 border-2 border-dashed border-blue-500/30 rounded-xl p-3 overflow-y-auto space-y-2 h-full"
+    >
+      @for (p of teamACards(); track p.id) {
+        <div
+          cdkDrag
+          [cdkDragDisabled]="!isAdmin"
+          [class]="isAdmin
+            ? 'flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-500 transition-colors group'
+            : 'flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-default'"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">{{ initials(p.name) }}</div>
+            <div>
+              <div class="text-sm font-bold">{{ p.name }}</div>
+              <div class="text-xs text-slate-400">⭐ {{ round(p.elo) }}</div>
+            </div>
+          </div>
+          @if (isAdmin) {
+            <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div
+      [id]="'available'"
+      cdkDropList
+      [cdkDropListData]="availableCards()"
+      (cdkDropListDropped)="drop($event)"
+      class="bg-slate-900/50 border border-slate-700 rounded-xl p-3 overflow-y-auto space-y-2 h-full"
+    >
+      @for (p of availableCards(); track p.id) {
+        <div
+          cdkDrag
+          [cdkDragDisabled]="!isAdmin"
+          [class]="isAdmin
+            ? 'flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-500 transition-colors group'
+            : 'flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-default'"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">{{ initials(p.name) }}</div>
+            <div>
+              <div class="text-sm font-bold">{{ p.name }}</div>
+              <div class="text-xs text-slate-400">⭐ {{ round(p.elo) }}</div>
+            </div>
+          </div>
+          @if (isAdmin) {
+            <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div
+      [id]="'teamB'"
+      cdkDropList
+      [cdkDropListData]="teamBCards()"
+      (cdkDropListDropped)="drop($event)"
+      class="bg-red-900/20 border-2 border-dashed border-red-500/30 rounded-xl p-3 overflow-y-auto space-y-2 h-full"
+    >
+      @for (p of teamBCards(); track p.id) {
+        <div
+          cdkDrag
+          [cdkDragDisabled]="!isAdmin"
+          [class]="isAdmin
+            ? 'flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-500 transition-colors group'
+            : 'flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-sm cursor-default'"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">{{ initials(p.name) }}</div>
+            <div>
+              <div class="text-sm font-bold">{{ p.name }}</div>
+              <div class="text-xs text-slate-400">⭐ {{ round(p.elo) }}</div>
+            </div>
+          </div>
+          @if (isAdmin) {
+            <div class="text-slate-500 opacity-50 group-hover:opacity-100 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (isAdmin) {
+    <div class="mt-6 text-center fade-in">
+      <button
+        (click)="createMatch.emit()"
+        class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-indigo-500/30 w-full md:w-auto"
+      >
+        Créer le Match
+      </button>
+    </div>
+  }
+</div>

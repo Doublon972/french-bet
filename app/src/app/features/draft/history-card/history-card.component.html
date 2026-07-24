@@ -1,0 +1,38 @@
+<div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm relative">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-semibold text-white">📜 Historique</h2>
+    @if (isAdmin) {
+      <button
+        (click)="closeSession.emit()"
+        class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-bold transition shadow-md"
+      >
+        Clôturer la session
+      </button>
+    }
+  </div>
+  <ul class="space-y-3 max-h-[250px] overflow-y-auto pr-2 text-sm">
+    @if (history.length === 0) {
+      <li class="text-slate-500 text-center italic">Aucun match terminé dans cette session</li>
+    }
+    @for (m of history; track m.id) {
+      <li
+        (click)="selectMatch.emit(m)"
+        class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm"
+      >
+        <div class="flex justify-between items-center mb-1">
+          <span [class]="m.winner === 'A' ? 'text-blue-400 font-bold truncate w-5/12' : 'text-slate-500 line-through truncate w-5/12'">{{ m.teamA_names }}</span>
+          <span class="text-xs text-slate-600 font-bold">VS</span>
+          <span [class]="m.winner !== 'A' ? 'text-red-400 font-bold text-right truncate w-5/12' : 'text-slate-500 line-through text-right truncate w-5/12'">{{ m.teamB_names }}</span>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-400 mt-2 bg-slate-800 px-2 py-1 rounded items-center">
+          <span>Cote: x{{ m.oddsA }}</span>
+          <span class="text-slate-500 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Détails
+          </span>
+          <span>Cote: x{{ m.oddsB }}</span>
+        </div>
+      </li>
+    }
+  </ul>
+</div>

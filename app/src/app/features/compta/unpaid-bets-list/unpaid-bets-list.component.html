@@ -1,0 +1,17 @@
+<ul class="space-y-3 max-h-[500px] overflow-y-auto pr-2 text-sm">
+  @if (summary.unpaidBets.length === 0) {
+    <li class="text-slate-500 text-center italic py-4">Tous les paris sont réglés ✅</li>
+  }
+  @for (bet of summary.unpaidBets; track $index) {
+    <li class="bg-amber-900/10 border border-amber-500/20 p-3 rounded-xl">
+      <div class="flex justify-between items-start gap-2">
+        <div class="min-w-0">
+          <div class="font-bold text-white truncate">{{ bet.user }}</div>
+          <div class="text-[11px] text-slate-500 truncate">{{ bet.matchTeams || '' }}</div>
+          <div class="text-[10px] text-slate-600">{{ formatDateFull(bet.matchTimestamp) }}</div>
+        </div>
+        <div class="text-amber-400 font-black shrink-0">{{ fmt(bet.potentialWin) }}$</div>
+      </div>
+    </li>
+  }
+</ul>

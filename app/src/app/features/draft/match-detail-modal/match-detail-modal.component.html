@@ -1,0 +1,76 @@
+<div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 fade-in">
+  <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh]">
+    <div class="flex justify-between items-center mb-6 shrink-0">
+      <h3 class="text-xl font-bold text-white">Détails du Match</h3>
+      <button (click)="close.emit()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
+    </div>
+
+    <div class="space-y-4 flex-grow overflow-hidden flex flex-col">
+      <div class="flex justify-between items-center mb-6 pb-6 border-b border-slate-700 text-center shrink-0">
+        <div [class]="match.winner === 'A' ? 'w-5/12 text-blue-400 font-bold' : 'w-5/12 text-slate-500'">
+          <div class="text-xl mb-1">{{ match.teamA_names }}</div>
+          <span class="text-sm">Cote x{{ match.oddsA }}</span>
+        </div>
+        <div class="w-2/12 text-slate-600 font-black italic text-2xl">VS</div>
+        <div [class]="match.winner === 'B' ? 'w-5/12 text-red-400 font-bold' : 'w-5/12 text-slate-500'">
+          <div class="text-xl mb-1">{{ match.teamB_names }}</div>
+          <span class="text-sm">Cote x{{ match.oddsB }}</span>
+        </div>
+      </div>
+
+      @if (isAdmin) {
+        <div class="flex flex-col flex-grow overflow-hidden">
+          <h4 class="font-semibold text-slate-300 mb-4 text-sm uppercase tracking-wider shrink-0">Récapitulatif des paris</h4>
+
+          @if (sortedBets().length === 0) {
+            <div class="text-slate-500 text-sm text-center py-4 italic">Aucun pari enregistré pour ce match.</div>
+          }
+
+          <div class="space-y-3 overflow-y-auto pr-2 flex-grow">
+            @for (entry of sortedBets(); track entry[0]) {
+              <div class="bg-slate-900/80 p-4 rounded-xl flex flex-wrap gap-2 justify-between items-center text-sm border border-slate-700/50">
+                <div class="flex items-center gap-2 text-base">
+                  <span class="font-bold text-white">{{ entry[1].user }}</span> a misé
+                  <span [class]="entry[1].team === 'A' ? 'text-blue-400 font-bold' : 'text-red-400 font-bold'">
+                    {{ entry[1].amount }}$ sur {{ entry[1].team === 'A' ? 'Bleu' : 'Rouge' }}
+                  </span>
+                </div>
+                <div class="flex items-center">
+                  <span class="text-base">
+                    {{ isWinner(entry[0]) ? '✅' : '❌' }}
+                    @if (isWinner(entry[0])) {
+                      <span class="text-emerald-400 font-bold">+{{ entry[1].potentialWin.toFixed(0) }}$</span>
+                    } @else {
+                      <span class="text-slate-500 line-through">-{{ entry[1].amount }}$</span>
+                    }
+                  </span>
+                  @if (isWinner(entry[0]) && isAdmin && isLiveMatch) {
+                    <button
+                      (click)="togglePaid.emit({ betId: entry[0], currentStatus: entry[1].paid || false })"
+                      [class]="(entry[1].paid || false)
+                        ? 'ml-4 text-xs px-3 py-1.5 rounded-lg border transition font-bold bg-emerald-600/20 text-emerald-400 border-emerald-500/50 hover:bg-slate-700'
+                        : 'ml-4 text-xs px-3 py-1.5 rounded-lg border transition font-bold bg-slate-700 text-slate-300 border-slate-600 hover:bg-emerald-600/20 hover:text-emerald-400 hover:border-emerald-500/50'"
+                    >
+                      {{ (entry[1].paid || false) ? '✅ Payé' : 'À payer' }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="mt-6 pt-4 border-t border-slate-700 shrink-0 text-right">
+      @if (isAdmin && isLiveMatch) {
+        <button
+          (click)="confirmCancel()"
+          class="bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold shadow-lg"
+        >
+          ⚠️ Annuler ce match et restaurer l'Elo
+        </button>
+      }
+    </div>
+  </div>
+</div>

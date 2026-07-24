@@ -1,0 +1,24 @@
+<div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+  <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">📦 Sessions (Archives)</h2>
+  <ul class="space-y-3 max-h-[200px] overflow-y-auto pr-2 text-sm">
+    @if (rows().length === 0) {
+      <li class="text-slate-500 text-center italic py-4">Aucune session archivée</li>
+    }
+    @for (row of rows(); track row.session.id) {
+      <li
+        (click)="selectSession.emit(row.session)"
+        class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 transition"
+      >
+        <div class="flex flex-col">
+          <span class="text-slate-200 font-semibold">{{ row.dateStr }}</span>
+          <span class="text-[10px] text-slate-500 uppercase tracking-wider">{{ row.nbMatches }} Matchs</span>
+        </div>
+        @if (isAdmin) {
+          <div [class]="row.pnlColor + ' font-bold bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800'">
+            {{ row.sign }}{{ row.pnl }}$
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</div>

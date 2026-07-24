@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+.selected-player {
+  border-color: #6366f1 !important;
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.selected-group {
+  border-color: #f59e0b !important;
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.overlay-pop-in {
+  animation: overlayPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes overlayPopIn {
+  from { opacity: 0; transform: translateY(-24px) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.overlay-celebrate-in {
+  animation: overlayCelebrateIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes overlayCelebrateIn {
+  0% { opacity: 0; transform: translateY(-30px) scale(0.8); }
+  60% { transform: translateY(4px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.overlay-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 255, 255, 0.16) 52%, transparent 70%);
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  animation: overlayShine 2.2s ease-out 0.3s 1;
+  pointer-events: none;
+}
+
+@keyframes overlayShine {
+  to { background-position: -50% 0; }
+}
+
+.overlay-icon-pop {
+  animation: overlayIconPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+@keyframes overlayIconPop {
+  0% { transform: scale(0) rotate(-15deg); }
+  70% { transform: scale(1.25) rotate(6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.overlay-live-dot {
+  animation: overlayLivePulse 1.6s ease-in-out infinite;
+}
+
+@keyframes overlayLivePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+}

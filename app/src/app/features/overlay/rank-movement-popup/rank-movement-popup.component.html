@@ -1,0 +1,36 @@
+<div class="overflow-hidden rounded-2xl shadow-2xl shadow-black/40 min-w-[440px] backdrop-blur-md bg-gradient-to-b from-slate-900/95 to-slate-950/95 border border-slate-600/60">
+  <div class="h-1 w-full bg-gradient-to-r from-slate-500 via-indigo-400 to-slate-500"></div>
+
+  <div class="px-6 py-5">
+    <div class="text-slate-300 font-black uppercase tracking-[0.2em] text-xs text-center mb-4">📊 Classement mis à jour</div>
+
+    <div class="space-y-2">
+      @for (m of movements; track m.playerId) {
+        <div class="flex items-center justify-between gap-4 bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3">
+          <div class="font-bold text-white truncate">{{ m.name }}</div>
+          <div class="flex items-center gap-3 shrink-0 text-sm">
+            <span class="text-slate-500">{{ m.beforeElo }}</span>
+            <span class="text-slate-600">→</span>
+            <span class="font-black text-indigo-300">{{ m.afterElo }}</span>
+            <span
+              class="flex items-center gap-1 font-black px-2 py-0.5 rounded-full text-xs"
+              [class]="direction(m) === 'up'
+                ? 'text-emerald-300 bg-emerald-500/15'
+                : direction(m) === 'down'
+                  ? 'text-red-300 bg-red-500/15'
+                  : 'text-slate-400 bg-slate-700/40'"
+            >
+              @if (direction(m) === 'up') {
+                ▲ #{{ m.afterRank }}
+              } @else if (direction(m) === 'down') {
+                ▼ #{{ m.afterRank }}
+              } @else {
+                = #{{ m.afterRank }}
+              }
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

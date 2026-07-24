@@ -1,0 +1,28 @@
+<div
+  class="overlay-shine relative overflow-hidden rounded-2xl shadow-2xl min-w-[520px] text-center backdrop-blur-md border-2"
+  [class]="winnerSide === 'A'
+    ? 'bg-gradient-to-b from-blue-950/95 to-slate-950/95 border-blue-400/60 shadow-blue-500/40'
+    : 'bg-gradient-to-b from-red-950/95 to-slate-950/95 border-red-400/60 shadow-red-500/40'"
+>
+  <div
+    class="h-1.5 w-full"
+    [class]="winnerSide === 'A' ? 'bg-gradient-to-r from-blue-500 via-sky-300 to-blue-500' : 'bg-gradient-to-r from-red-500 via-orange-300 to-red-500'"
+  ></div>
+
+  <div class="px-10 py-7">
+    <div class="overlay-icon-pop text-5xl mb-1 drop-shadow-[0_0_18px_rgba(250,204,21,0.5)]">🏆</div>
+    <div class="text-white/80 font-black uppercase tracking-[0.3em] text-xs mb-3">Victoire</div>
+    <div
+      class="font-black text-4xl leading-tight drop-shadow-[0_0_20px_currentColor]"
+      [class]="winnerSide === 'A' ? 'text-blue-300' : 'text-red-300'"
+    >
+      {{ winnerNames }}
+    </div>
+    <div class="text-slate-400 text-sm font-semibold mt-3">
+      bat <span class="line-through text-slate-500">{{ loserNames }}</span>
+    </div>
+    <div class="inline-block mt-4 px-4 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-sm font-black">
+      Cote x{{ odds }}
+    </div>
+  </div>
+</div>

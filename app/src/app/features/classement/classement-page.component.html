@@ -1,0 +1,29 @@
+<div class="h-screen flex flex-col p-4 md:p-8">
+  <div class="shrink-0">
+    <app-header
+      subtitle="Données personnelles"
+      [navLinks]="[
+        { label: '🚩 Classement Groupes', path: '/groupes' },
+        { label: 'Retour à la Draft', path: '/', variant: 'plain', showBackIcon: true },
+      ]"
+    />
+  </div>
+
+  <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-8 flex-grow h-0 pb-4">
+    <div class="lg:col-span-1 h-full overflow-hidden">
+      <app-player-leaderboard
+        [players]="rankedPlayers()"
+        [selectedPlayerId]="selectedPlayerId()"
+        (select)="selectPlayer($event)"
+      />
+    </div>
+
+    <div class="lg:col-span-3 h-full overflow-hidden">
+      <app-player-detail-panel
+        [player]="selectedPlayer()"
+        [totalPlayerCount]="totalPlayerCount()"
+        [reversedMatches]="reversedPlayerMatches()"
+      />
+    </div>
+  </div>
+</div>
