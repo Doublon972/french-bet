@@ -1,6 +1,7 @@
 import { HistoryEntry } from '../models/match.model';
 import { Player } from '../models/player.model';
-import { rankByElo } from './groups.util';
+import { Group } from '../models/group.model';
+import { buildGroups, rankByAvgElo, rankByElo, splitGroupName } from './groups.util';
 
 export interface RankMovement {
   playerId: string;
@@ -16,21 +17,22 @@ export function involvedPlayerIds(entry: HistoryEntry): string[] {
   return [...(entry.teamA_ids ?? []), ...(entry.teamB_ids ?? [])];
 }
 
+/** Reconstitue le roster tel qu'il était juste avant `entry`, en annulant les deltas `eloChanges`. */
+function reconstructBeforePlayers(players: Player[], entry: HistoryEntry): Player[] {
+  const eloChanges = entry.eloChanges ?? {};
+  return players.map((p) => (eloChanges[p.id] !== undefined ? { ...p, elo: p.elo - eloChanges[p.id] } : p));
+}
+
 /**
  * Pour chaque joueur impliqué dans `entry`, calcule son rang au classement juste avant et
  * juste après ce match (en "annulant" le delta Elo appliqué via `eloChanges`, puis en reclassant
  * l'intégralité du roster dans les deux états).
  */
 export function computeRankMovements(players: Player[], entry: HistoryEntry): RankMovement[] {
-  const eloChanges = entry.eloChanges ?? {};
   const involvedIds = new Set(involvedPlayerIds(entry));
   if (involvedIds.size === 0) return [];
 
-  const beforePlayers = players.map((p) =>
-    eloChanges[p.id] !== undefined ? { ...p, elo: p.elo - eloChanges[p.id] } : p,
-  );
-
-  const rankedBefore = rankByElo(beforePlayers);
+  const rankedBefore = rankByElo(reconstructBeforePlayers(players, entry));
   const rankedAfter = rankByElo(players);
 
   const movements: RankMovement[] = [];
@@ -50,59 +52,81 @@ export function computeRankMovements(players: Player[], entry: HistoryEntry): Ra
   return movements;
 }
 
-export interface EloRecord {
+export interface PlayerPodiumEntry {
   playerId: string;
   name: string;
   elo: number;
-  previousElo: number;
-  rank: number;
+  afterRank: number;
 }
 
 /**
- * Détermine, parmi les joueurs impliqués dans `entry`, ceux qui viennent d'atteindre leur
- * meilleur Elo personnel de tous les temps (en reconstituant leur historique via `eloChanges`,
- * comme le graphique Elo de la page Classement). Un joueur à son tout premier match n'est
- * jamais considéré en "record" (rien à battre).
+ * Parmi les joueurs de l'équipe GAGNANTE, ceux qui viennent d'entrer dans le top 3 (podium) —
+ * c'est-à-dire qui n'y étaient pas avant ce match (`beforeRank > 3`) et y sont maintenant
+ * (`afterRank <= 3`, égalités comprises grâce au classement dense). Un joueur déjà dans le top 3
+ * qui y reste, ou qui recule sans jamais y avoir été, ne déclenche rien.
  */
-export function computeEloRecords(players: Player[], allMatchesAscending: HistoryEntry[], entry: HistoryEntry): EloRecord[] {
-  const eloChanges = entry.eloChanges ?? {};
-  const involvedIds = involvedPlayerIds(entry);
-  if (involvedIds.length === 0) return [];
+export function computePlayerPodiumEntries(players: Player[], entry: HistoryEntry): PlayerPodiumEntry[] {
+  const winningIds = new Set(entry.winner === 'A' ? entry.teamA_ids ?? [] : entry.teamB_ids ?? []);
+  if (winningIds.size === 0) return [];
 
-  const rankedAfter = rankByElo(players);
-  const priorMatches = [...allMatchesAscending].filter((m) => m.id !== entry.id && m.timestamp < entry.timestamp).reverse();
+  const movements = computeRankMovements(players, entry);
 
-  const records: EloRecord[] = [];
-  for (const id of involvedIds) {
-    const player = players.find((p) => p.id === id);
-    const delta = eloChanges[id];
-    if (!player || delta === undefined) continue;
+  return movements
+    .filter((m) => winningIds.has(m.playerId) && m.beforeRank > 3 && m.afterRank <= 3)
+    .map((m) => ({ playerId: m.playerId, name: m.name, elo: m.afterElo, afterRank: m.afterRank }));
+}
 
-    const beforeElo = player.elo - delta;
-    let historicalMax = beforeElo;
-    let hasPriorMatch = false;
-    let runningElo = beforeElo;
+export interface GroupPodiumEntry {
+  groupId: string;
+  groupName: string;
+  avgElo: number;
+  afterRank: number;
+}
 
-    for (const m of priorMatches) {
-      const isTeamA = (m.teamA_ids ?? []).includes(id);
-      const isTeamB = (m.teamB_ids ?? []).includes(id);
-      if (!isTeamA && !isTeamB) continue;
-      hasPriorMatch = true;
-      const d = m.eloChanges?.[id] ?? 0;
-      runningElo -= d;
-      historicalMax = Math.max(historicalMax, runningElo);
-    }
+/**
+ * Même logique que `computePlayerPodiumEntries`, mais au niveau des groupes : un groupe entre
+ * dans le top 3 du classement des groupes (par Elo moyen) grâce à ce match. Ne compte que les
+ * groupes entièrement du côté gagnant (une "Guerre Civile", où le groupe est présent des deux
+ * côtés, n'a pas de camp gagnant clair et est ignorée — même convention que la page Groupes).
+ */
+export function computeGroupPodiumEntries(players: Player[], entry: HistoryEntry): GroupPodiumEntry[] {
+  const involvedIds = new Set(involvedPlayerIds(entry));
+  if (involvedIds.size === 0) return [];
 
-    if (hasPriorMatch && player.elo > historicalMax) {
-      const rank = rankedAfter.find((p) => p.id === id)?.rank ?? 0;
-      records.push({
-        playerId: id,
-        name: player.name,
-        elo: Math.round(player.elo),
-        previousElo: Math.round(beforeElo),
-        rank,
+  const winningIds = new Set(entry.winner === 'A' ? entry.teamA_ids ?? [] : entry.teamB_ids ?? []);
+  const losingIds = new Set(entry.winner === 'A' ? entry.teamB_ids ?? [] : entry.teamA_ids ?? []);
+
+  const involvedGroupNames = new Set<string>();
+  for (const p of players) {
+    if (!involvedIds.has(p.id)) continue;
+    const { groupName } = splitGroupName(p.name);
+    if (groupName) involvedGroupNames.add(groupName);
+  }
+  if (involvedGroupNames.size === 0) return [];
+
+  const rankedBefore = rankByAvgElo(buildGroups(reconstructBeforePlayers(players, entry)));
+  const rankedAfter = rankByAvgElo(buildGroups(players));
+
+  const findGroup = (ranked: (Group & { rank: number })[], name: string) => ranked.find((g) => g.name === name);
+
+  const entries: GroupPodiumEntry[] = [];
+  for (const groupName of involvedGroupNames) {
+    const after = findGroup(rankedAfter, groupName);
+    const before = findGroup(rankedBefore, groupName);
+    if (!after || !before) continue;
+
+    const hasWinner = after.members.some((m) => winningIds.has(m.id));
+    const hasLoser = after.members.some((m) => losingIds.has(m.id));
+    if (!hasWinner || hasLoser) continue; // pas gagnant, ou "Guerre Civile" (présent des deux côtés)
+
+    if (before.rank > 3 && after.rank <= 3) {
+      entries.push({
+        groupId: after.id,
+        groupName: after.name,
+        avgElo: Math.round(after.avgElo),
+        afterRank: after.rank,
       });
     }
   }
-  return records;
+  return entries;
 }

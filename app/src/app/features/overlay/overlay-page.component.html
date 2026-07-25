@@ -18,8 +18,11 @@
       @case ('rank-movement') {
         <app-rank-movement-popup [movements]="event.movements" />
       }
-      @case ('elo-record') {
-        <app-elo-record-popup [record]="event.record" />
+      @case ('player-podium') {
+        <app-player-podium-popup [entry]="event.entry" />
+      }
+      @case ('group-podium') {
+        <app-group-podium-popup [entry]="event.entry" />
       }
     }
   }

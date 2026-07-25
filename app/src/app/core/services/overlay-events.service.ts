@@ -1,6 +1,13 @@
 import { Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
-import { ActiveMatch, HistoryEntry, Player } from '../models';
-import { computeEloRecords, computeRankMovements, EloRecord, RankMovement } from '../utils/overlay.util';
+import { ActiveMatch, HistoryEntry } from '../models';
+import {
+  GroupPodiumEntry,
+  PlayerPodiumEntry,
+  RankMovement,
+  computeGroupPodiumEntries,
+  computePlayerPodiumEntries,
+  computeRankMovements,
+} from '../utils/overlay.util';
 import { HistoryService } from './history.service';
 import { MatchService } from './match.service';
 import { PlayersService } from './players.service';
@@ -16,11 +23,12 @@ export type OverlayEvent =
       durationMs: number;
     }
   | { kind: 'rank-movement'; key: string; movements: RankMovement[]; durationMs: number }
-  | { kind: 'elo-record'; key: string; record: EloRecord; durationMs: number };
+  | { kind: 'player-podium'; key: string; entry: PlayerPodiumEntry; durationMs: number }
+  | { kind: 'group-podium'; key: string; entry: GroupPodiumEntry; durationMs: number };
 
 const VICTORY_DURATION_MS = 5500;
 const RANK_MOVEMENT_DURATION_MS = 7000;
-const ELO_RECORD_DURATION_MS = 5500;
+const PODIUM_DURATION_MS = 5500;
 const ADVANCE_CHECK_INTERVAL_MS = 300;
 
 /**
@@ -45,9 +53,9 @@ const PLAYERS_SETTLE_DELAY_MS = 700;
 
 /**
  * Détecte les événements "temps réel" à afficher sur l'overlay de stream et les expose sous
- * forme de file d'attente affichée un par un (victoire, mouvements de classement, records Elo).
- * Ignore volontairement l'historique déjà présent au chargement de la page (un rechargement de
- * la source OBS ne doit pas rejouer tout l'historique).
+ * forme de file d'attente affichée un par un (victoire, mouvements de classement, entrées podium
+ * joueur/groupe). Ignore volontairement l'historique déjà présent au chargement de la page (un
+ * rechargement de la source OBS ne doit pas rejouer tout l'historique).
  */
 @Injectable({ providedIn: 'root' })
 export class OverlayEventsService {
@@ -105,7 +113,6 @@ export class OverlayEventsService {
 
   private enqueueMatchResolvedEvents(entry: HistoryEntry): void {
     const players = this.playersService.players() ?? [];
-    const allMatches = this.historyService.allMatches();
 
     const movements = computeRankMovements(players, entry);
     if (movements.length > 0) {
@@ -117,13 +124,21 @@ export class OverlayEventsService {
       });
     }
 
-    const records = computeEloRecords(players, allMatches, entry);
-    for (const record of records) {
+    for (const podiumEntry of computePlayerPodiumEntries(players, entry)) {
       this.enqueue({
-        kind: 'elo-record',
-        key: `record-${entry.id}-${record.playerId}`,
-        record,
-        durationMs: ELO_RECORD_DURATION_MS,
+        kind: 'player-podium',
+        key: `player-podium-${entry.id}-${podiumEntry.playerId}`,
+        entry: podiumEntry,
+        durationMs: PODIUM_DURATION_MS,
+      });
+    }
+
+    for (const podiumEntry of computeGroupPodiumEntries(players, entry)) {
+      this.enqueue({
+        kind: 'group-podium',
+        key: `group-podium-${entry.id}-${podiumEntry.groupId}`,
+        entry: podiumEntry,
+        durationMs: PODIUM_DURATION_MS,
       });
     }
   }

@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit, computed, inject } from '@angular/core';
 import { OverlayEventsService } from '../../core/services/overlay-events.service';
-import { EloRecordPopupComponent } from './elo-record-popup/elo-record-popup.component';
+import { GroupPodiumPopupComponent } from './group-podium-popup/group-podium-popup.component';
 import { IdleTickerComponent } from './idle-ticker/idle-ticker.component';
 import { MatchAnnouncePopupComponent } from './match-announce-popup/match-announce-popup.component';
+import { PlayerPodiumPopupComponent } from './player-podium-popup/player-podium-popup.component';
 import { RankMovementPopupComponent } from './rank-movement-popup/rank-movement-popup.component';
 import { VictoryPopupComponent } from './victory-popup/victory-popup.component';
 
@@ -16,7 +17,8 @@ const BODY_BG_CLASSES = ['bg-slate-900', 'text-slate-200', 'min-h-screen'];
     MatchAnnouncePopupComponent,
     VictoryPopupComponent,
     RankMovementPopupComponent,
-    EloRecordPopupComponent,
+    PlayerPodiumPopupComponent,
+    GroupPodiumPopupComponent,
     IdleTickerComponent,
   ],
   templateUrl: './overlay-page.component.html',
