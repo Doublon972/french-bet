@@ -25,9 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: app/package-lock.json
+          node-version: '22.x'
 
       - name: Install dependencies
         working-directory: app
@@ -35,10 +33,7 @@ jobs:
 
       - name: Build
         working-directory: app
-        run: npm run build
-
-      - name: List build output
-        run: ls -la app/dist/app/browser
+        run: npm run build -- --configuration production
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
