@@ -35,10 +35,11 @@ jobs:
 
       - name: Build
         working-directory: app
-        run: npm run build
+        run: npm run build -- --configuration production
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: app/dist/app/browser
+          force_orphan: true
