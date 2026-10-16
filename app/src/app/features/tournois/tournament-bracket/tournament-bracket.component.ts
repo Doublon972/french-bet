@@ -13,12 +13,14 @@ interface Round {
   styleUrls: ['./tournament-bracket.component.css'],
 })
 export class TournamentBracketComponent {
-  @Input() match!: TournamentMatch;
+  @Input() match: TournamentMatch | null = null;
 
   rounds: Round[] = [];
 
   ngOnInit(): void {
-    this.rounds = this.extractRounds(this.match);
+    if (this.match) {
+      this.rounds = this.extractRounds(this.match);
+    }
   }
 
   private extractRounds(match: TournamentMatch, depth = 0): Round[] {

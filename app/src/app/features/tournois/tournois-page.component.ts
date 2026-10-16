@@ -1,5 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { TournamentService } from './tournament.service';
 import { Tournament, TournamentGroup } from './tournament.model';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +7,7 @@ import { TournamentBracketComponent } from './tournament-bracket/tournament-brac
 @Component({
   selector: 'app-tournois-page',
   standalone: true,
-  imports: [RouterLink, FormsModule, TournamentBracketComponent],
+  imports: [FormsModule, TournamentBracketComponent],
   templateUrl: './tournois-page.component.html',
 })
 export class TournoisPageComponent {
@@ -29,6 +28,10 @@ export class TournoisPageComponent {
 
   // Vue
   readonly currentView = signal<'list' | 'create' | 'participants' | 'bracket'>('list');
+
+  formatDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleDateString('fr-FR');
+  }
 
   openCreateForm(): void {
     this.currentView.set('create');
