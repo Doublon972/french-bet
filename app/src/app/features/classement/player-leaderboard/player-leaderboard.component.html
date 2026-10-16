@@ -1,0 +1,44 @@
+<div
+  class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm flex flex-col h-full overflow-hidden"
+>
+  <h2 class="text-lg font-semibold mb-4 text-white shrink-0">🏆 Classement Individuel</h2>
+
+  <div class="relative mb-4 shrink-0">
+    <input
+      type="text"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="searchTerm.set($event)"
+      placeholder="Rechercher..."
+      class="w-full p-2.5 pl-9 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"
+    />
+    <svg class="w-4 h-4 text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      ></path>
+    </svg>
+  </div>
+
+  <ul class="space-y-3 overflow-y-auto pr-2 flex-grow h-0">
+    @for (p of filteredPlayers(); track p.id) {
+      <li
+        class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer transition"
+        [class]="isSelected(p) ? 'selected-player' : 'hover:border-slate-500 hover:bg-slate-800'"
+        (click)="select.emit(p.id)"
+      >
+        <div class="flex items-center gap-3 w-3/4">
+          <span class="w-6 shrink-0 text-center text-sm" [class]="rankColor(p.rank)">#{{ p.rank }}</span>
+          <div class="truncate">
+            <div class="font-semibold text-slate-200 truncate">{{ p.name }}</div>
+            <div class="text-[10px] text-slate-500">{{ totalGames(p) }} matchs ({{ winrate(p) }}%)</div>
+          </div>
+        </div>
+        <div class="text-sm shrink-0 font-bold text-indigo-400">
+          {{ round(p.elo) }} <span class="text-[10px] text-slate-500 font-normal">pts</span>
+        </div>
+      </li>
+    }
+  </ul>
+</div>

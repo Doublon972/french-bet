@@ -1,0 +1,22 @@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+    <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">💰 Banque Globale</div>
+    <div [class]="bankrollClass()">{{ bankrollText() }}</div>
+    <div class="text-[11px] mt-1 text-slate-500">Résultat net cumulé</div>
+  </div>
+  <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+    <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">⚠️ Paris en attente</div>
+    <div class="text-3xl font-black text-amber-400">{{ fmt(summary.unpaidLiability) }}$</div>
+    <div class="text-[11px] mt-1 text-slate-500">{{ summary.unpaidBets.length }} pari{{ summary.unpaidBets.length > 1 ? 's' : '' }} à payer</div>
+  </div>
+  <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+    <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">🎫 Total Misé</div>
+    <div class="text-3xl font-black text-white">{{ fmt(summary.totalWagered) }}$</div>
+    <div class="text-[11px] mt-1 text-slate-500">{{ summary.totalBets }} pari{{ summary.totalBets > 1 ? 's' : '' }} enregistrés</div>
+  </div>
+  <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+    <div class="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">🎯 Mise Moyenne</div>
+    <div class="text-3xl font-black text-white">{{ fmt(summary.avgBet) }}$</div>
+    <div class="text-[11px] mt-1 text-slate-500">sur {{ summary.matchesCount }} match{{ summary.matchesCount > 1 ? 's' : '' }}</div>
+  </div>
+</div>

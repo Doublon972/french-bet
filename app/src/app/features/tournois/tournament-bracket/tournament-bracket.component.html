@@ -1,0 +1,36 @@
+<div class="bracket-wrapper">
+  <div class="bracket">
+    @for (round of rounds; track round.name) {
+      <div class="round">
+        <div class="round-header">{{ round.name }}</div>
+        <div class="matches">
+          @for (match of round.matches; track match.id) {
+            <div class="match" [class.final-match]="round.name === 'Finale'">
+              @if (match.participant1) {
+                <div class="participant" [class.winner]="match.winner === match.participant1">
+                  <span>{{ match.participant1 }}</span>
+                  @if (match.winner === match.participant1) {
+                    <span class="winner-badge">V</span>
+                  }
+                </div>
+              } @else {
+                <div class="participant pending">En attente</div>
+              }
+
+              @if (match.participant2) {
+                <div class="participant" [class.winner]="match.winner === match.participant2">
+                  <span>{{ match.participant2 }}</span>
+                  @if (match.winner === match.participant2) {
+                    <span class="winner-badge">V</span>
+                  }
+                </div>
+              } @else {
+                <div class="participant pending">En attente</div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

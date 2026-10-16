@@ -1,0 +1,35 @@
+<div class="fixed top-8 left-1/2 -translate-x-1/2 z-40">
+  @if (matchBanner(); as match) {
+    <app-match-announce-popup [teamA]="match.teamA" [teamB]="match.teamB" [oddsA]="match.oddsA" [oddsB]="match.oddsB" [probA]="match.probA" />
+  }
+</div>
+
+<div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+  @if (current(); as event) {
+    @switch (event.kind) {
+      @case ('victory') {
+        <app-victory-popup
+          [winnerNames]="event.winnerNames"
+          [loserNames]="event.loserNames"
+          [winnerSide]="event.winnerSide"
+          [odds]="event.odds"
+        />
+      }
+      @case ('rank-movement') {
+        <app-rank-movement-popup [movements]="event.movements" />
+      }
+      @case ('player-podium') {
+        <app-player-podium-popup [entry]="event.entry" />
+      }
+      @case ('group-podium') {
+        <app-group-podium-popup [entry]="event.entry" />
+      }
+    }
+  }
+</div>
+
+<div class="fixed bottom-8 left-8 z-30">
+  @if (isIdle()) {
+    <app-idle-ticker />
+  }
+</div>

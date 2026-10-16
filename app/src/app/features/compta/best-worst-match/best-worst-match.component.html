@@ -1,0 +1,28 @@
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <div class="bg-emerald-900/10 p-5 rounded-2xl border border-emerald-500/20 shadow-xl backdrop-blur-sm flex justify-between items-center">
+    <div>
+      <div class="text-emerald-400 text-[11px] font-bold uppercase tracking-wider mb-1">🏆 Meilleur match (gain)</div>
+      @if (summary.best; as best) {
+        <div class="text-sm font-semibold text-slate-300">{{ best.teamA_names }} vs {{ best.teamB_names }}</div>
+        <div class="text-[11px] text-slate-500">{{ formatDateFull(best.timestamp) }}</div>
+      } @else {
+        <div class="text-sm font-semibold text-slate-300">Aucune donnée</div>
+        <div class="text-[11px] text-slate-500"></div>
+      }
+    </div>
+    <div class="text-2xl font-black text-emerald-400 shrink-0">{{ summary.best ? fmtSigned(summary.best.pnl) : '+0$' }}</div>
+  </div>
+  <div class="bg-red-900/10 p-5 rounded-2xl border border-red-500/20 shadow-xl backdrop-blur-sm flex justify-between items-center">
+    <div>
+      <div class="text-red-400 text-[11px] font-bold uppercase tracking-wider mb-1">📉 Pire match (perte)</div>
+      @if (summary.worst; as worst) {
+        <div class="text-sm font-semibold text-slate-300">{{ worst.teamA_names }} vs {{ worst.teamB_names }}</div>
+        <div class="text-[11px] text-slate-500">{{ formatDateFull(worst.timestamp) }}</div>
+      } @else {
+        <div class="text-sm font-semibold text-slate-300">Aucune donnée</div>
+        <div class="text-[11px] text-slate-500"></div>
+      }
+    </div>
+    <div class="text-2xl font-black text-red-400 shrink-0">{{ summary.worst ? fmtSigned(summary.worst.pnl) : '0$' }}</div>
+  </div>
+</div>

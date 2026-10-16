@@ -1,0 +1,129 @@
+.bracket-wrapper {
+  overflow-x: auto;
+  padding: 2rem;
+  min-height: 600px;
+}
+
+.bracket {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  min-width: fit-content;
+}
+
+.round {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+}
+
+.round-header {
+  text-align: center;
+  font-weight: bold;
+  color: #a78bfa;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+}
+
+.matches {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.match {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #334155;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.match::after {
+  content: '';
+  position: absolute;
+  right: -1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 2px;
+  background: #475569;
+}
+
+.round:last-child .match::after {
+  display: none;
+}
+
+.match:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  transform: scale(1.02);
+}
+
+.participant {
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+}
+
+.participant.winner {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border: 2px solid #10b981;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.participant.pending {
+  background: #0f172a;
+  color: #64748b;
+  font-style: italic;
+}
+
+.winner-badge {
+  background: #10b981;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.round-label {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.final-match {
+  border-color: #fbbf24;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+}
+
+.final-match .participant.winner {
+  background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+  border-color: #fbbf24;
+}

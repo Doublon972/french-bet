@@ -1,0 +1,78 @@
+<div
+  class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm flex flex-col h-full overflow-hidden relative"
+>
+  @if (currentPlayer(); as player) {
+    <div class="flex flex-col h-full fade-in overflow-y-auto pr-2">
+      <div class="flex justify-between items-end mb-6 pb-6 border-b border-slate-700 shrink-0">
+        <div class="flex items-center gap-4">
+          <div
+            class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-black text-white shadow-lg shadow-indigo-500/30 shrink-0"
+          >
+            {{ initials() }}
+          </div>
+          <div>
+            <h2 class="text-3xl font-black text-white tracking-tight">{{ player.name }}</h2>
+            <p class="text-indigo-400 font-semibold">{{ rankText() }}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-4xl font-black text-white">{{ round(player.elo) }}</div>
+          <div class="text-sm text-slate-400 uppercase tracking-widest font-bold">Points Elo</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 mb-6 shrink-0">
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50">
+          <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Matchs</div>
+          <div class="text-2xl font-black text-white">{{ totalGames() }}</div>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50">
+          <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Taux de victoire</div>
+          <div class="text-2xl font-black text-emerald-400">{{ winrate() }}%</div>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50">
+          <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Série actuelle</div>
+          <div class="text-2xl font-black">
+            @if (streak().count === 0) {
+              <span class="text-slate-500">-</span>
+            } @else if (streak().status === 'W') {
+              <span class="text-emerald-400"
+                >{{ streak().count }} Victoire{{ streak().count > 1 ? 's' : '' }} 🔥</span
+              >
+            } @else {
+              <span class="text-red-400">{{ streak().count }} Défaite{{ streak().count > 1 ? 's' : '' }} 🧊</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow min-h-[300px]">
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50 flex flex-col h-full overflow-hidden">
+          <h3 class="text-sm font-bold text-slate-300 mb-4 shrink-0">Évolution de l'Elo</h3>
+          <div class="relative flex-grow h-0 w-full">
+            <app-elo-chart [player]="player" [reversedMatches]="currentReversedMatches()" />
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700/50 flex flex-col h-full overflow-hidden">
+          <h3 class="text-sm font-bold text-slate-300 mb-4 shrink-0">Historique Personnel</h3>
+          <app-player-match-history [player]="player" [reversedMatches]="currentReversedMatches()" />
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div
+      class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10 bg-slate-800/80 backdrop-blur-sm rounded-2xl"
+    >
+      <svg class="w-16 h-16 mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+        ></path>
+      </svg>
+      <p class="text-lg font-semibold">Sélectionnez un joueur pour voir ses statistiques</p>
+    </div>
+  }
+</div>

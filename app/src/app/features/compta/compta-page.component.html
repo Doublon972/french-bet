@@ -1,0 +1,45 @@
+@if (!authReady()) {
+  <!-- Ecran de vérification d'accès -->
+  <div class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center gap-4">
+    <div class="w-10 h-10 border-4 border-slate-700 border-t-emerald-500 rounded-full animate-spin"></div>
+    <p class="text-slate-500 text-sm font-semibold tracking-wide">Vérification des droits d'accès...</p>
+  </div>
+} @else if (!isAdmin()) {
+  <!-- Ecran d'accès refusé -->
+  <div class="fixed inset-0 bg-slate-950/95 z-[100] flex flex-col items-center justify-center gap-4 text-center p-6 fade-in">
+    <div class="w-16 h-16 rounded-2xl bg-red-900/30 border border-red-500/30 flex items-center justify-center text-3xl">🔒</div>
+    <h1 class="text-xl font-bold text-white">Accès réservé aux administrateurs</h1>
+    <p class="text-slate-500 text-sm max-w-sm">Cette page contient des données financières sensibles. Redirection vers l'accueil...</p>
+    <a routerLink="/" class="mt-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl transition text-sm font-bold">Retour à l'accueil</a>
+  </div>
+} @else {
+  <!-- Contenu principal -->
+  <div class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto fade-in">
+      <app-header subtitle="Comptabilité" [navLinks]="navLinks" />
+
+      <app-kpi-row [summary]="financeSummary()" />
+
+      <app-best-worst-match [summary]="financeSummary()" />
+
+      <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm mb-6">
+        <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">📊 Évolution de la Banque</h2>
+        <div class="relative h-[280px] w-full">
+          <app-bankroll-chart [summary]="financeSummary()" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8">
+        <div class="lg:col-span-2 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+          <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">📜 Historique financier des matchs</h2>
+          <app-match-finance-list [summary]="financeSummary()" />
+        </div>
+
+        <div class="lg:col-span-1 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm">
+          <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">⚠️ Paris en attente de paiement</h2>
+          <app-unpaid-bets-list [summary]="financeSummary()" />
+        </div>
+      </div>
+    </div>
+  </div>
+}

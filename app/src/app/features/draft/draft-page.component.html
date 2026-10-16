@@ -1,0 +1,89 @@
+<div class="p-4 md:p-8">
+  <app-header
+    subtitle="Fight-Club"
+    [logoLarge]="true"
+    [showAdminBar]="true"
+    [pnlAmount]="totalPnL()"
+    (openSettings)="openSettingsModal()"
+    (resetData)="resetAllData()"
+  />
+
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-1 space-y-6">
+      @if (isAdmin()) {
+        <app-roster-form (addPlayer)="addPlayer($event)" />
+      }
+
+      <a
+        routerLink="/tournois"
+        class="block bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/30 hover:border-purple-400 px-6 py-4 rounded-xl text-white font-bold transition shadow-lg cursor-pointer flex items-center justify-center gap-3 group"
+      >
+        <svg class="w-6 h-6 text-purple-400 group-hover:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+        </svg>
+        Tournois
+        <svg class="w-4 h-4 text-slate-500 group-hover:text-purple-300 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+
+      <app-leaderboard-card [players]="players()" [isAdmin]="isAdmin()" (editPlayer)="editPlayer($event)" />
+
+      <app-history-card
+        [history]="history()"
+        [isAdmin]="isAdmin()"
+        (selectMatch)="openMatchDetail($event)"
+        (closeSession)="closeSession()"
+      />
+
+      <app-sessions-card [sessions]="sessions()" [isAdmin]="isAdmin()" (selectSession)="openSessionDetail($event)" />
+    </div>
+
+    <div class="lg:col-span-2 space-y-6">
+      @if (!activeMatch()) {
+        <app-draft-board
+          [players]="players()"
+          [draftTeamA]="draft().teamA"
+          [draftTeamB]="draft().teamB"
+          [isAdmin]="isAdmin()"
+          (draftChange)="onDraftChange($event)"
+          (createMatch)="createMatch()"
+        />
+      } @else {
+        <app-active-match-panel
+          [match]="activeMatch()!"
+          [isAdmin]="isAdmin()"
+          (placeBet)="placeBet($event)"
+          (cancelBet)="cancelActiveBet($event)"
+          (resolveMatch)="resolveMatch($event)"
+          (cancelMatch)="cancelMatch()"
+        />
+      }
+    </div>
+  </div>
+</div>
+
+@if (settingsModalOpen()) {
+  <app-settings-modal [settings]="settings()" (close)="closeSettingsModal()" (save)="saveSettings($event)" />
+}
+
+@if (selectedSession(); as session) {
+  <app-session-detail-modal
+    [session]="session"
+    [isAdmin]="isAdmin()"
+    (close)="closeSessionDetail()"
+    (selectMatch)="openMatchDetail($event)"
+    (deleteSession)="deleteSession()"
+  />
+}
+
+@if (selectedMatch(); as match) {
+  <app-match-detail-modal
+    [match]="match"
+    [isAdmin]="isAdmin()"
+    [isLiveMatch]="isSelectedMatchLive()"
+    (close)="closeMatchDetail()"
+    (togglePaid)="togglePaid($event)"
+    (cancelMatch)="cancelHistoryMatch()"
+  />
+}

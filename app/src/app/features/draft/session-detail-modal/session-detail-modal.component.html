@@ -1,0 +1,45 @@
+<div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+  <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-xl w-full flex flex-col max-h-[90vh]">
+    <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4 shrink-0">
+      <h3 class="text-xl font-bold text-white">Session du {{ titleDate() }}</h3>
+      <button (click)="close.emit()" class="text-slate-400 hover:text-white text-xl p-2">✕</button>
+    </div>
+
+    <ul class="space-y-3 overflow-y-auto pr-2 text-sm flex-grow">
+      @if (matches().length === 0) {
+        <li class="text-slate-500 text-center italic">Aucun match dans cette session</li>
+      }
+      @for (m of matches(); track m.id) {
+        <li
+          (click)="selectMatch.emit(m)"
+          class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 hover:border-slate-500 transition shadow-sm"
+        >
+          <div class="flex justify-between items-center mb-1">
+            <span [class]="m.winner === 'A' ? 'text-blue-400 font-bold truncate w-5/12' : 'text-slate-500 line-through truncate w-5/12'">{{ m.teamA_names }}</span>
+            <span class="text-xs text-slate-600 font-bold">VS</span>
+            <span [class]="m.winner !== 'A' ? 'text-red-400 font-bold text-right truncate w-5/12' : 'text-slate-500 line-through text-right truncate w-5/12'">{{ m.teamB_names }}</span>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 mt-2 bg-slate-800 px-2 py-1 rounded items-center">
+            <span>Cote: x{{ m.oddsA }}</span>
+            <span class="text-slate-500 flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              Détails
+            </span>
+            <span>Cote: x{{ m.oddsB }}</span>
+          </div>
+        </li>
+      }
+    </ul>
+
+    <div class="mt-6 pt-4 border-t border-slate-700 shrink-0 text-right">
+      @if (isAdmin) {
+        <button
+          (click)="confirmDelete()"
+          class="bg-red-900/30 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl transition text-sm font-bold shadow-lg"
+        >
+          ⚠️ Supprimer la session (Restaure l'Elo)
+        </button>
+      }
+    </div>
+  </div>
+</div>

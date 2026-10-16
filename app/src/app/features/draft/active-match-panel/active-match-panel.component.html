@@ -1,0 +1,82 @@
+<div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-xl backdrop-blur-sm fade-in">
+  <div class="text-center mb-6">
+    <h2 class="text-2xl font-bold text-white mb-2">🔥 MATCH EN COURS 🔥</h2>
+    @if (!isAdmin) {
+      <p class="text-sm text-slate-400">Le combat va commencer ...</p>
+    } @else {
+      <p class="text-sm text-slate-400">Ajoutez les paris manuellement ci-dessous.</p>
+    }
+  </div>
+
+  <div class="flex flex-col md:flex-row justify-between items-stretch gap-6">
+    <div class="w-full md:w-5/12 bg-blue-900/30 p-6 rounded-xl border border-blue-500/30 text-center flex flex-col relative">
+      <h3 class="text-blue-400 font-bold mb-2">Équipe Bleue</h3>
+      <div class="text-sm text-slate-300 mb-4 flex-grow">{{ match.teamA.map(p => p.name).join(' & ') }}</div>
+      <div class="text-4xl font-black text-white mb-1">x{{ match.oddsA }}</div>
+      <div class="text-[10px] font-bold text-blue-300 bg-blue-900/50 px-2 py-1 rounded mx-auto mb-2">Pot : {{ potA() }}$</div>
+      <div class="text-xs text-blue-400 mb-4">{{ (match.probA * 100).toFixed(0) }}% chance</div>
+
+      @if (isAdmin) {
+        <div class="mt-auto space-y-2 border-t border-blue-500/30 pt-4 fade-in">
+          <input type="text" [(ngModel)]="betNameA" placeholder="Nom (ex: Pari 1)" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-blue-500/50 text-sm" />
+          <input type="number" [(ngModel)]="betAmountA" placeholder="Mise $" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-blue-500/50" />
+          <button (click)="submitBet('A')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-bold transition">Ajouter Pari Bleu</button>
+          <button (click)="confirmResolve('A')" class="w-full bg-slate-700 hover:bg-blue-800 text-white text-xs py-1 rounded transition mt-4">🏆 Déclarer Victoire A</button>
+        </div>
+      }
+    </div>
+
+    <div class="w-full md:w-2/12 flex flex-col items-center justify-center border-x border-slate-700/50 px-2">
+      <div class="text-2xl font-black text-slate-600 italic mb-4">VS</div>
+      <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider text-center">Paris en cours</h4>
+      <div class="w-full space-y-2 text-xs max-h-[300px] overflow-y-auto text-center">
+        @if (bets().length === 0) {
+          <span class="text-slate-500">Aucun pari</span>
+        }
+        @for (entry of bets(); track entry[0]) {
+          <div class="bg-slate-900/50 p-1.5 rounded border border-slate-700/50 text-left mb-1 relative group">
+            <div class="font-bold truncate text-slate-300 pr-4">{{ entry[1].user }}</div>
+            <div [class]="entry[1].team === 'A' ? 'text-blue-400 font-semibold' : 'text-red-400 font-semibold'">
+              {{ entry[1].amount }}$ sur {{ entry[1].team === 'A' ? 'Bleu' : 'Rouge' }}
+            </div>
+            <div class="text-[9px] text-slate-500">Gain pot. : {{ entry[1].potentialWin.toFixed(0) }}$</div>
+            @if (isAdmin) {
+              <button
+                (click)="confirmCancelBet(entry[0])"
+                class="absolute top-1 right-1 text-red-500/50 hover:text-red-500 font-bold opacity-0 group-hover:opacity-100 transition px-1"
+              >
+                ✕
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="w-full md:w-5/12 bg-red-900/30 p-6 rounded-xl border border-red-500/30 text-center flex flex-col relative">
+      <h3 class="text-red-400 font-bold mb-2">Équipe Rouge</h3>
+      <div class="text-sm text-slate-300 mb-4 flex-grow">{{ match.teamB.map(p => p.name).join(' & ') }}</div>
+      <div class="text-4xl font-black text-white mb-1">x{{ match.oddsB }}</div>
+      <div class="text-[10px] font-bold text-red-300 bg-red-900/50 px-2 py-1 rounded mx-auto mb-2">Pot : {{ potB() }}$</div>
+      <div class="text-xs text-red-400 mb-4">{{ (match.probB * 100).toFixed(0) }}% chance</div>
+
+      @if (isAdmin) {
+        <div class="mt-auto space-y-2 border-t border-red-500/30 pt-4 fade-in">
+          <input type="text" [(ngModel)]="betNameB" placeholder="Nom (ex: Pari 2)" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-red-500/50 text-sm" />
+          <input type="number" [(ngModel)]="betAmountB" placeholder="Mise $" class="w-full p-2 rounded bg-slate-900 text-center text-white border border-red-500/50" />
+          <button (click)="submitBet('B')" class="w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg font-bold transition">Ajouter Pari Rouge</button>
+          <button (click)="confirmResolve('B')" class="w-full bg-slate-700 hover:bg-red-800 text-white text-xs py-1 rounded transition mt-4">🏆 Déclarer Victoire B</button>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (isAdmin) {
+    <button
+      (click)="cancelMatch.emit()"
+      class="mt-6 w-full text-center text-sm text-red-500/50 hover:text-red-400 transition underline fade-in"
+    >
+      Annuler ce match (Effacer les paris)
+    </button>
+  }
+</div>
