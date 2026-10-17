@@ -41,23 +41,30 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @for (tournament of tournaments(); track tournament.id) {
               <div
-                class="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-indigo-500/50 transition cursor-pointer shadow-lg"
-                (click)="selectTournament(tournament)"
+                class="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-indigo-500/50 transition shadow-lg"
               >
                 <h3 class="text-xl font-bold text-white mb-2">{{ tournament.name }}</h3>
                 <p class="text-slate-400 text-sm mb-4">
                   {{ tournament.groups.length }} groupe(s) • {{ tournament.groups.flatMap(g => g.participants).length }} participant(s)
                 </p>
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center gap-3">
                   <span class="text-xs text-slate-500">
                     {{ formatDate(tournament.createdAt) }}
                   </span>
-                  <button
-                    (click)="$event.stopPropagation(); deleteTournament(tournament.id)"
-                    class="text-red-400 hover:text-red-300 text-sm font-bold transition"
-                  >
-                    Supprimer
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      (click)="selectTournament(tournament)"
+                      class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition"
+                    >
+                      Voir l'arbre
+                    </button>
+                    <button
+                      (click)="deleteTournament(tournament.id)"
+                      class="text-red-400 hover:text-red-300 text-sm font-bold transition"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               </div>
             }
@@ -194,7 +201,14 @@
           <app-tournament-bracket [match]="currentTournament()!.bracket" />
         } @else {
           <div class="text-center py-12 text-slate-500">
-            <p>Impossible de générer l'arbre (pas assez de participants)</p>
+            <p class="text-xl mb-2">Impossible de générer l'arbre</p>
+            <p class="text-sm">Pas assez de participants ou erreur de génération</p>
+            <button
+              (click)="goBackToList()"
+              class="mt-4 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition"
+            >
+              Retour à la liste
+            </button>
           </div>
         }
       </div>
