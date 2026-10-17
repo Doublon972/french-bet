@@ -6,10 +6,11 @@ import { HistoryService } from '../../core/services/history.service';
 import { MatchService } from '../../core/services/match.service';
 import { PlayersService } from '../../core/services/players.service';
 import { SettingsService } from '../../core/services/settings.service';
-import { ActiveMatch, Player } from '../../core/models';
+import { ActiveMatch, HistoryEntry, Player } from '../../core/models';
 import { TeamSide } from '../../core/models/bet.model';
 import { averageElo, computeOdds, expectedScoreA } from '../../core/utils/elo.util';
 import { ActiveMatchPanelComponent } from '../draft/active-match-panel/active-match-panel.component';
+import { MatchDetailModalComponent } from '../draft/match-detail-modal/match-detail-modal.component';
 import { TournamentService } from './tournament.service';
 import { Tournament, TournamentGroup, TournamentMatch } from './tournament.model';
 import { tournamentTeamLabel } from './tournament.util';
@@ -23,7 +24,7 @@ interface MatchRound {
 @Component({
   selector: 'app-tournois-page',
   standalone: true,
-  imports: [FormsModule, RouterLink, TournamentBracketComponent, ActiveMatchPanelComponent],
+  imports: [FormsModule, RouterLink, TournamentBracketComponent, ActiveMatchPanelComponent, MatchDetailModalComponent],
   templateUrl: './tournois-page.component.html',
 })
 export class TournoisPageComponent {
@@ -53,6 +54,11 @@ export class TournoisPageComponent {
       active.tournamentMatchId === match.id
       ? active
       : null;
+  });
+  readonly selectedMatchId = signal<string | null>(null);
+  readonly selectedMatch = computed<HistoryEntry | null>(() => {
+    const id = this.selectedMatchId();
+    return id ? this.historyService.allMatches().find((match) => match.id === id) ?? null : null;
   });
 
   readonly showCreateForm = signal(false);
@@ -255,6 +261,72 @@ export class TournoisPageComponent {
   teamLabel(tournament: Tournament, groupId: string | undefined): string {
     const group = tournament.groups.find((candidate) => candidate.id === groupId);
     return group ? tournamentTeamLabel(group, this.players()) : 'En attente';
+  }
+
+  tournamentMatchHistory(tournament: Tournament, match: TournamentMatch): HistoryEntry | null {
+    const matches = this.historyService.allMatches();
+    const exact = matches.find(
+      (entry) => entry.tournamentId === tournament.id && entry.tournamentMatchId === match.id,
+    );
+    if (exact || !match.winner) return exact ?? null;
+
+    const groupA = tournament.groups.find((group) => group.id === match.participant1);
+    const groupB = tournament.groups.find((group) => group.id === match.participant2);
+    if (!groupA || !groupB) return null;
+
+    const winnerGroup = tournament.groups.find((group) => group.id === match.winner);
+    if (!winnerGroup) return null;
+    const groupIds = (ids: string[] | undefined, group: TournamentGroup): boolean =>
+      !!ids && ids.length === group.participants.length && group.participants.every((id) => ids.includes(id));
+
+    return (
+      matches
+        .filter((entry) => {
+          const teamsMatch =
+            (groupIds(entry.teamA_ids, groupA) && groupIds(entry.teamB_ids, groupB)) ||
+            (groupIds(entry.teamA_ids, groupB) && groupIds(entry.teamB_ids, groupA));
+          const recordedWinnerIds = entry.winner === 'A' ? entry.teamA_ids : entry.teamB_ids;
+          return teamsMatch && groupIds(recordedWinnerIds, winnerGroup);
+        })
+        .sort((a, b) => b.timestamp - a.timestamp)[0] ?? null
+    );
+  }
+
+  tournamentMatchTeamLabel(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string {
+    const active = this.activeTournamentMatch();
+    if (active && active.tournamentMatchId === match.id) {
+      return (side === 'A' ? active.teamA : active.teamB).map((player) => player.name).join(' & ');
+    }
+    const history = this.tournamentMatchHistory(tournament, match);
+    if (history) return side === 'A' ? history.teamA_names : history.teamB_names;
+    return this.teamLabel(tournament, side === 'A' ? match.participant1 : match.participant2);
+  }
+
+  tournamentMatchOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string | null {
+    const active = this.activeTournamentMatch();
+    if (active && active.tournamentMatchId === match.id) {
+      return side === 'A' ? active.oddsA : active.oddsB;
+    }
+    const history = this.tournamentMatchHistory(tournament, match);
+    if (history) return side === 'A' ? history.oddsA : history.oddsB;
+    return this.matchOdds(tournament, match, side);
+  }
+
+  tournamentMatchWinnerLabel(tournament: Tournament, match: TournamentMatch): string {
+    const history = this.tournamentMatchHistory(tournament, match);
+    if (history) {
+      return history.winner === 'A' ? history.teamA_names : history.teamB_names;
+    }
+    return this.teamLabel(tournament, match.winner);
+  }
+
+  openTournamentMatchDetails(tournament: Tournament, match: TournamentMatch): void {
+    const history = this.tournamentMatchHistory(tournament, match);
+    if (history) this.selectedMatchId.set(history.id);
+  }
+
+  closeMatchDetails(): void {
+    this.selectedMatchId.set(null);
   }
 
   matchOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string | null {
