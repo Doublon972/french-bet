@@ -26,7 +26,6 @@ interface MatchRound {
   standalone: true,
   imports: [FormsModule, RouterLink, TournamentBracketComponent, ActiveMatchPanelComponent, MatchDetailModalComponent],
   templateUrl: './tournois-page.component.html',
-  styleUrl: './tournois-page.component.css',
 })
 export class TournoisPageComponent {
   private readonly tournamentService = inject(TournamentService);
