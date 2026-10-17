@@ -60,6 +60,7 @@ export class TournoisPageComponent {
     const id = this.selectedMatchId();
     return id ? this.historyService.allMatches().find((match) => match.id === id) ?? null : null;
   });
+  readonly selectedTournamentMatch = signal<TournamentMatch | null>(null);
 
   readonly showCreateForm = signal(false);
   readonly tournamentName = signal('');
@@ -328,6 +329,10 @@ export class TournoisPageComponent {
 
   closeMatchDetails(): void {
     this.selectedMatchId.set(null);
+  }
+
+  onMatchSelect(match: TournamentMatch): void {
+    this.selectedTournamentMatch.set(match);
   }
 
   matchOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string | null {

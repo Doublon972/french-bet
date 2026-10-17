@@ -237,6 +237,8 @@
               [match]="currentTournament()!.bracket"
               [groups]="currentTournament()!.groups"
               [players]="players()"
+              [selectedMatchId]="selectedTournamentMatch()?.id ?? null"
+              (matchSelect)="onMatchSelect($event)"
             />
           } @else {
             <div class="text-center py-12 text-slate-500">
@@ -248,20 +250,71 @@
 
         @if (isAdmin()) {
           <aside class="rounded-xl border border-indigo-500/30 bg-slate-800 p-5 shadow-2xl">
-            <h3 class="mb-1 text-xl font-bold text-white">Administration des combats</h3>
-            <p class="mb-5 text-sm text-slate-400">Démarrez le prochain combat pour ouvrir la draft complète, enregistrer les paris et déclarer le vainqueur.</p>
+            @if (selectedTournamentMatch()) {
+              <div class="mb-4">
+                <h3 class="mb-1 text-xl font-bold text-white">Combat sélectionné</h3>
+                <p class="text-sm text-slate-400">
+                  {{ selectedTournamentMatch()!.round }} -
+                  {{ tournamentMatchTeamLabel(currentTournament()!, selectedTournamentMatch()!, 'A') }} vs
+                  {{ tournamentMatchTeamLabel(currentTournament()!, selectedTournamentMatch()!, 'B') }}
+                </p>
+              </div>
 
-            @if (matchRounds().length === 0) {
-              <p class="text-sm text-slate-500">Aucun combat à afficher.</p>
+              @if (activeTournamentMatch() && activeTournamentMatch()!.tournamentMatchId === selectedTournamentMatch()!.id) {
+                <app-active-match-panel
+                  [match]="activeTournamentMatch()!"
+                  [isAdmin]="isAdmin()"
+                  (placeBet)="placeTournamentBet($event)"
+                  (cancelBet)="cancelTournamentBet($event)"
+                  (resolveMatch)="resolveTournamentMatch($event)"
+                  (cancelMatch)="cancelTournamentMatch()"
+                />
+              } @else {
+                <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+                      <h4 class="mb-2 text-sm font-bold text-indigo-300">Équipe A</h4>
+                      <p class="text-white text-sm mb-2">{{ tournamentMatchTeamLabel(currentTournament()!, selectedTournamentMatch()!, 'A') }}</p>
+                      @if (tournamentMatchOdds(currentTournament()!, selectedTournamentMatch()!, 'A')) {
+                        <p class="text-emerald-400 text-sm font-bold">
+                          Cote: {{ tournamentMatchOdds(currentTournament()!, selectedTournamentMatch()!, 'A') }}
+                        </p>
+                      }
+                    </div>
+                    <div class="rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+                      <h4 class="mb-2 text-sm font-bold text-red-300">Équipe B</h4>
+                      <p class="text-white text-sm mb-2">{{ tournamentMatchTeamLabel(currentTournament()!, selectedTournamentMatch()!, 'B') }}</p>
+                      @if (tournamentMatchOdds(currentTournament()!, selectedTournamentMatch()!, 'B')) {
+                        <p class="text-emerald-400 text-sm font-bold">
+                          Cote: {{ tournamentMatchOdds(currentTournament()!, selectedTournamentMatch()!, 'B') }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+
+                  @if (!selectedTournamentMatch()!.winner) {
+                    <button
+                      (click)="startTournamentMatch(selectedTournamentMatch()!)"
+                      class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition"
+                    >
+                      Démarrer ce combat
+                    </button>
+                  }
+                </div>
+              }
+            } @else {
+              <div class="text-center py-8">
+                <h3 class="mb-2 text-xl font-bold text-white">Administration des combats</h3>
+                <p class="text-sm text-slate-400 mb-4">
+                  Sélectionnez un match dans l'arbre pour le lancer et gérer les paris.
+                </p>
+                <p class="text-xs text-slate-500">
+                  Cliquez sur un match disponible (non grisé) pour le sélectionner.
+                </p>
+              </div>
             }
-            @for (round of matchRounds(); track round.name) {
-              <div class="mb-5 last:mb-0">
-                <h4 class="mb-2 text-xs font-bold uppercase tracking-wider text-indigo-300">{{ round.name }}</h4>
-                <div class="space-y-3">
-                  @for (match of round.matches; track match.id; let matchIndex = $index) {
-                    <div
-                      class="rounded-xl border border-slate-700 bg-slate-900/80 p-3"
-                      [class.cursor-pointer]="!!match.winner && !!tournamentMatchHistory(currentTournament()!, match)"
+          </aside>
+        }
                       [class.transition]="!!match.winner"
                       [class]="match.winner && tournamentMatchHistory(currentTournament()!, match) ? 'hover:border-indigo-400' : ''"
                       [attr.role]="match.winner && tournamentMatchHistory(currentTournament()!, match) ? 'button' : null"
