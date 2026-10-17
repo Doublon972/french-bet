@@ -19,6 +19,7 @@ export class MatchDetailModalComponent {
   @Input() isAdmin = false;
   /** Le bouton "payer"/"annuler le match" ne s'affiche que pour un match de la session EN COURS (pas archivé). */
   @Input() isLiveMatch = false;
+  @Input() canTogglePaid = false;
 
   @Output() close = new EventEmitter<void>();
   @Output() togglePaid = new EventEmitter<{ betId: string; currentStatus: boolean }>();

@@ -333,7 +333,9 @@
         [match]="match"
         [isAdmin]="isAdmin()"
         [isLiveMatch]="false"
+        [canTogglePaid]="true"
         (close)="closeMatchDetails()"
+        (togglePaid)="toggleTournamentBetPaid($event)"
       />
     }
   </div>

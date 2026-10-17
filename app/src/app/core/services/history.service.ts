@@ -46,7 +46,19 @@ export class HistoryService {
   private readonly rawSessions = toSignal(listValue$<Omit<Session, 'id'>>(this.db, 'sessions'));
 
   togglebetPaid(matchId: string, betId: string, currentStatus: boolean): Promise<void> {
-    return update(ref(this.db), { [`history/${matchId}/bets/${betId}/paid`]: !currentStatus });
+    if (this.history().some((match) => match.id === matchId)) {
+      return update(ref(this.db), { [`history/${matchId}/bets/${betId}/paid`]: !currentStatus });
+    }
+
+    for (const session of this.sessions()) {
+      if (session.matches?.[matchId]) {
+        return update(ref(this.db), {
+          [`sessions/${session.id}/matches/${matchId}/bets/${betId}/paid`]: !currentStatus,
+        });
+      }
+    }
+
+    return Promise.reject(new Error(`Match introuvable dans l'historique : ${matchId}`));
   }
 
   /** Annule un match de l'historique EN COURS : restaure l'Elo et les V/D des joueurs concernés. */

@@ -282,6 +282,7 @@ export class TournoisPageComponent {
     return (
       matches
         .filter((entry) => {
+          if (entry.timestamp < tournament.createdAt) return false;
           const teamsMatch =
             (groupIds(entry.teamA_ids, groupA) && groupIds(entry.teamB_ids, groupB)) ||
             (groupIds(entry.teamA_ids, groupB) && groupIds(entry.teamB_ids, groupA));
@@ -330,26 +331,37 @@ export class TournoisPageComponent {
   }
 
   matchOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string | null {
-    const groupId = side === 'A' ? match.participant1 : match.participant2;
-    const group = tournament.groups.find((candidate) => candidate.id === groupId);
-    if (!group) return null;
+    const quote = this.tournamentMatchQuote(tournament, match);
+    return quote ? (side === 'A' ? quote.oddsA : quote.oddsB) : null;
+  }
 
-    const teamPlayers = group.participants.map((id) => this.players().find((player) => player.id === id));
-    const resolvedTeam = teamPlayers.filter((player): player is Player => !!player);
-    if (resolvedTeam.length !== group.participants.length || resolvedTeam.length === 0) return null;
+  private tournamentMatchQuote(
+    tournament: Tournament,
+    match: TournamentMatch,
+  ): { probA: number; probB: number; oddsA: string; oddsB: string } | null {
+    const groupA = tournament.groups.find((candidate) => candidate.id === match.participant1);
+    const groupB = tournament.groups.find((candidate) => candidate.id === match.participant2);
+    if (!groupA || !groupB) return null;
 
-    const otherGroupId = side === 'A' ? match.participant2 : match.participant1;
-    const otherGroup = tournament.groups.find((candidate) => candidate.id === otherGroupId);
-    if (!otherGroup) return null;
-    const otherPlayers = otherGroup.participants.map((id) => this.players().find((player) => player.id === id));
-    const resolvedOtherTeam = otherPlayers.filter((player): player is Player => !!player);
-    if (resolvedOtherTeam.length !== otherGroup.participants.length || resolvedOtherTeam.length === 0) return null;
+    const teamA = groupA.participants.map((id) => this.players().find((player) => player.id === id));
+    const resolvedTeamA = teamA.filter((player): player is Player => !!player);
+    if (resolvedTeamA.length !== groupA.participants.length || resolvedTeamA.length === 0) return null;
 
-    const eloA = averageElo(resolvedTeam.map((player) => player.elo));
-    const eloB = averageElo(resolvedOtherTeam.map((player) => player.elo));
+    const teamB = groupB.participants.map((id) => this.players().find((player) => player.id === id));
+    const resolvedTeamB = teamB.filter((player): player is Player => !!player);
+    if (resolvedTeamB.length !== groupB.participants.length || resolvedTeamB.length === 0) return null;
+
+    const eloA = averageElo(resolvedTeamA.map((player) => player.elo));
+    const eloB = averageElo(resolvedTeamB.map((player) => player.elo));
     const probA = expectedScoreA(eloA, eloB);
-    const probability = side === 'A' ? probA : 1 - probA;
-    return computeOdds(probability, this.settingsService.settings().baseOdds);
+    const probB = 1 - probA;
+    const baseOdds = this.settingsService.settings().baseOdds;
+    return {
+      probA,
+      probB,
+      oddsA: computeOdds(probA, baseOdds),
+      oddsB: computeOdds(probB, baseOdds),
+    };
   }
 
   async startTournamentMatch(match: TournamentMatch): Promise<void> {
@@ -376,6 +388,11 @@ export class TournoisPageComponent {
       alert('Impossible de retrouver tous les combattants de ces équipes dans la base de données.');
       return;
     }
+    const quote = this.tournamentMatchQuote(tournament, match);
+    if (!quote) {
+      alert('Impossible de calculer les cotes de base de ce combat.');
+      return;
+    }
 
     try {
       await this.matchService.createMatch(teamA, teamB, this.settingsService.settings(), {
@@ -383,6 +400,7 @@ export class TournoisPageComponent {
         matchId: match.id,
         participantA: match.participant1,
         participantB: match.participant2,
+        ...quote,
       });
     } catch (error) {
       console.error('Erreur lors du démarrage du combat du tournoi', error);
@@ -423,6 +441,15 @@ export class TournoisPageComponent {
     this.matchService.cancelMatch().catch((error) => {
       console.error('Erreur lors de l’annulation du combat du tournoi', error);
       alert('Impossible d’annuler ce combat. Vérifiez votre connexion et réessayez.');
+    });
+  }
+
+  toggleTournamentBetPaid(payload: { betId: string; currentStatus: boolean }): void {
+    const matchId = this.selectedMatchId();
+    if (!matchId) return;
+    this.historyService.togglebetPaid(matchId, payload.betId, payload.currentStatus).catch((error) => {
+      console.error('Erreur lors de la mise à jour du paiement du pari du tournoi', error);
+      alert('Impossible de mettre à jour le paiement. Vérifiez votre connexion et réessayez.');
     });
   }
 

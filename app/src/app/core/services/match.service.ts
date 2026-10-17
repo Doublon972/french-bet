@@ -16,6 +16,10 @@ export interface TournamentMatchContext {
   matchId: string;
   participantA: string;
   participantB: string;
+  probA: number;
+  probB: number;
+  oddsA: string;
+  oddsB: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -38,14 +42,14 @@ export class MatchService {
     const eloA = averageElo(teamAPlayers.map((p) => p.elo));
     const eloB = averageElo(teamBPlayers.map((p) => p.elo));
 
-    const probA = expectedScoreA(eloA, eloB);
-    const probB = 1 - probA;
+    const probA = tournamentContext?.probA ?? expectedScoreA(eloA, eloB);
+    const probB = tournamentContext?.probB ?? 1 - probA;
 
     const newMatch: ActiveMatch = {
       teamA: teamAPlayers,
       teamB: teamBPlayers,
-      oddsA: computeOdds(probA, settings.baseOdds),
-      oddsB: computeOdds(probB, settings.baseOdds),
+      oddsA: tournamentContext?.oddsA ?? computeOdds(probA, settings.baseOdds),
+      oddsB: tournamentContext?.oddsB ?? computeOdds(probB, settings.baseOdds),
       probA,
       probB,
       bets: {},

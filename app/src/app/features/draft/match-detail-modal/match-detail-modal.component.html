@@ -44,7 +44,7 @@
                       <span class="text-slate-500 line-through">-{{ entry[1].amount }}$</span>
                     }
                   </span>
-                  @if (isWinner(entry[0]) && isAdmin && isLiveMatch) {
+                  @if (isWinner(entry[0]) && isAdmin && (isLiveMatch || canTogglePaid)) {
                     <button
                       (click)="togglePaid.emit({ betId: entry[0], currentStatus: entry[1].paid || false })"
                       [class]="(entry[1].paid || false)
