@@ -205,7 +205,7 @@ export class HistoryService {
 
     const activeMatch = activeMatchSnapshot.val() as ActiveMatch | null;
     if (activeMatch?.tournamentId === tournamentId) {
-      updates.activeMatch = null;
+      updates['activeMatch'] = null;
     }
 
     if (removedMatches.length > 0) {
