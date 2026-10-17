@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { HistoryService } from '../../core/services/history.service';
 import { MatchService } from '../../core/services/match.service';
 import { PlayersService } from '../../core/services/players.service';
 import { SettingsService } from '../../core/services/settings.service';
@@ -27,6 +28,7 @@ interface MatchRound {
 })
 export class TournoisPageComponent {
   private readonly tournamentService = inject(TournamentService);
+  private readonly historyService = inject(HistoryService);
   private readonly matchService = inject(MatchService);
   private readonly playersService = inject(PlayersService);
   private readonly settingsService = inject(SettingsService);
@@ -218,10 +220,23 @@ export class TournoisPageComponent {
     this.currentView.set('bracket');
   }
 
-  deleteTournament(tournamentId: string): void {
-    if (!confirm('Voulez-vous vraiment supprimer ce tournoi ?')) return;
-    this.tournamentService.deleteTournament(tournamentId);
-    this.currentView.set('list');
+  async deleteTournament(tournamentId: string): Promise<void> {
+    if (
+      !confirm(
+        'Voulez-vous vraiment supprimer ce tournoi ? Tous ses combats, paris, résultats et changements de statistiques des combattants seront également supprimés.',
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await this.historyService.deleteTournamentMatches(tournamentId);
+      this.tournamentService.deleteTournament(tournamentId);
+      this.currentView.set('list');
+    } catch (error) {
+      console.error('Erreur lors de la suppression des résultats du tournoi', error);
+      alert('La suppression du tournoi n’a pas pu être terminée. Vérifiez votre connexion et réessayez.');
+    }
   }
 
   goBackToList(): void {

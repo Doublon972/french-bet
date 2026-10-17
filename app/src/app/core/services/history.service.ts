@@ -1,8 +1,8 @@
 import { Injectable, Signal, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Database, push, ref, update } from 'firebase/database';
+import { Database, get, push, ref, update } from 'firebase/database';
 import { FIREBASE_DATABASE } from '../firebase.providers';
-import { HistoryEntry, Session } from '../models/match.model';
+import { ActiveMatch, HistoryEntry, Session } from '../models/match.model';
 import { Player } from '../models/player.model';
 import { listValue$ } from '../utils/rtdb.util';
 import { PlayersService } from './players.service';
@@ -153,6 +153,114 @@ export class HistoryService {
     updates[`sessions/${sessionId}`] = null;
 
     return update(ref(this.db), updates);
+  }
+
+  /** Supprime les matchs d'un tournoi, ses effets Elo/V-D et leur historique de paris. */
+  async deleteTournamentMatches(tournamentId: string): Promise<void> {
+    const [historySnapshot, sessionsSnapshot, playersSnapshot, activeMatchSnapshot] = await Promise.all([
+      get(ref(this.db, 'history')),
+      get(ref(this.db, 'sessions')),
+      get(ref(this.db, 'players')),
+      get(ref(this.db, 'activeMatch')),
+    ]);
+
+    const history = (historySnapshot.val() ?? {}) as Record<string, Omit<HistoryEntry, 'id'>>;
+    const sessions = (sessionsSnapshot.val() ?? {}) as Record<string, Omit<Session, 'id'>>;
+    const rawPlayers = (playersSnapshot.val() ?? {}) as Record<string, Omit<Player, 'id'>>;
+    const updates: Record<string, unknown> = {};
+    const removedMatches: Omit<HistoryEntry, 'id'>[] = [];
+
+    for (const [matchId, match] of Object.entries(history)) {
+      if (match?.tournamentId !== tournamentId) continue;
+      updates[`history/${matchId}`] = null;
+      removedMatches.push(match);
+    }
+
+    for (const [sessionId, session] of Object.entries(sessions)) {
+      if (!session?.matches) continue;
+      let removedFromSession = false;
+      const removedMatchIds: string[] = [];
+      const remainingMatches: Record<string, Omit<HistoryEntry, 'id'>> = {};
+
+      for (const [matchId, match] of Object.entries(session.matches)) {
+        if (match?.tournamentId === tournamentId) {
+          removedMatchIds.push(matchId);
+          removedMatches.push(match);
+          removedFromSession = true;
+        } else {
+          remainingMatches[matchId] = match;
+        }
+      }
+
+      if (!removedFromSession) continue;
+      if (Object.keys(remainingMatches).length === 0) {
+        updates[`sessions/${sessionId}`] = null;
+      } else {
+        for (const matchId of removedMatchIds) {
+          updates[`sessions/${sessionId}/matches/${matchId}`] = null;
+        }
+        updates[`sessions/${sessionId}/pnl`] = this.calculateSessionPnL(remainingMatches);
+      }
+    }
+
+    const activeMatch = activeMatchSnapshot.val() as ActiveMatch | null;
+    if (activeMatch?.tournamentId === tournamentId) {
+      updates.activeMatch = null;
+    }
+
+    if (removedMatches.length > 0) {
+      const playerUpdates = new Map<string, { elo: number; wins: number; losses: number }>();
+      for (const [id, player] of Object.entries(rawPlayers)) {
+        playerUpdates.set(id, {
+          elo: Number(player.elo) || 100,
+          wins: Number(player.wins) || 0,
+          losses: Number(player.losses) || 0,
+        });
+      }
+
+      const reversedMatchIds = new Set<string>();
+      removedMatches.sort((a, b) => b.timestamp - a.timestamp);
+      for (const match of removedMatches) {
+        if (match.tournamentMatchId && reversedMatchIds.has(match.tournamentMatchId)) continue;
+        if (match.tournamentMatchId) reversedMatchIds.add(match.tournamentMatchId);
+
+        if (match.eloChanges) {
+          for (const [playerId, delta] of Object.entries(match.eloChanges)) {
+            const player = playerUpdates.get(playerId);
+            if (player && Number.isFinite(delta)) {
+              player.elo = Math.max(100, player.elo - delta);
+            }
+          }
+        }
+        this.reverseWinLossMap(match.teamA_ids, match.winner === 'A', match.winner === 'B', playerUpdates);
+        this.reverseWinLossMap(match.teamB_ids, match.winner === 'B', match.winner === 'A', playerUpdates);
+      }
+
+      for (const [id, player] of playerUpdates) {
+        const original = rawPlayers[id];
+        if (
+          original &&
+          (original.elo !== player.elo || original.wins !== player.wins || original.losses !== player.losses)
+        ) {
+          updates[`players/${id}/elo`] = player.elo;
+          updates[`players/${id}/wins`] = player.wins;
+          updates[`players/${id}/losses`] = player.losses;
+        }
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await update(ref(this.db), updates);
+    }
+  }
+
+  private calculateSessionPnL(matches: Record<string, Omit<HistoryEntry, 'id'>>): number {
+    return Object.values(matches).reduce((total, match) => {
+      for (const bet of Object.values(match.bets ?? {})) {
+        total += bet.team === match.winner ? -(bet.potentialWin - bet.amount) : bet.amount;
+      }
+      return total;
+    }, 0);
   }
 
   private reverseWinLossMap(

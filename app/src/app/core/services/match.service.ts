@@ -120,6 +120,12 @@ export class MatchService {
       winner,
       bets: activeMatch.bets ?? {},
       eloChanges: eloChangesLog,
+      ...(activeMatch.tournamentId
+        ? {
+            tournamentId: activeMatch.tournamentId,
+            tournamentMatchId: activeMatch.tournamentMatchId,
+          }
+        : {}),
     };
 
     const newHistoryRef = push(ref(this.db, 'history'));

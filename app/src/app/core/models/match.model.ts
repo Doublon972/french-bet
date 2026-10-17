@@ -27,6 +27,8 @@ export interface HistoryEntry {
   winner: TeamSide;
   bets?: Record<string, Bet>;
   eloChanges?: Record<string, number>;
+  tournamentId?: string;
+  tournamentMatchId?: string;
 }
 
 export interface Session {
