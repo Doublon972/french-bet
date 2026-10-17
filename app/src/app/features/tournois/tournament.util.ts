@@ -5,6 +5,5 @@ export function tournamentTeamLabel(group: TournamentGroup, players: Player[]): 
   const members = group.participants
     .map((id) => players.find((player) => player.id === id)?.name ?? id)
     .join(' & ');
-  const name = group.name?.trim();
-  return name && members ? `${name} - ${members}` : name || members || 'Équipe';
+  return group.name?.trim() ? `${group.name.trim()} - ${members}` : members || 'Équipe';
 }

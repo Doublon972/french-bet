@@ -1,14 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
+import { PlayersService } from '../../core/services/players.service';
+import { SettingsService } from '../../core/services/settings.service';
+import { Player } from '../../core/models';
+import { averageElo, computeOdds, expectedScoreA } from '../../core/utils/elo.util';
 import { TournamentService } from './tournament.service';
 import { Tournament, TournamentGroup, TournamentMatch } from './tournament.model';
-import { FormsModule } from '@angular/forms';
-import { TournamentBracketComponent } from './tournament-bracket/tournament-bracket.component';
-import { PlayersService } from '../../core/services/players.service';
-import { Player } from '../../core/models';
-import { AuthService } from '../../core/services/auth.service';
-import { SettingsService } from '../../core/services/settings.service';
-import { averageElo, computeOdds, expectedScoreA } from '../../core/utils/elo.util';
 import { tournamentTeamLabel } from './tournament.util';
+import { TournamentBracketComponent } from './tournament-bracket/tournament-bracket.component';
+
+interface MatchRound {
+  name: string;
+  matches: TournamentMatch[];
+}
 
 @Component({
   selector: 'app-tournois-page',
@@ -19,33 +24,22 @@ import { tournamentTeamLabel } from './tournament.util';
 export class TournoisPageComponent {
   private readonly tournamentService = inject(TournamentService);
   private readonly playersService = inject(PlayersService);
-  private readonly authService = inject(AuthService);
   private readonly settingsService = inject(SettingsService);
+  private readonly authService = inject(AuthService);
 
   readonly tournaments = this.tournamentService.tournaments;
   readonly currentTournament = this.tournamentService.currentTournament;
   readonly players = computed<Player[]>(() => this.playersService.players() ?? []);
-
   readonly isAdmin = this.authService.isAdmin;
+  readonly matchRounds = computed(() => this.extractMatchRounds(this.currentTournament()?.bracket ?? null));
 
-  // Formulaire de création
+  readonly showCreateForm = signal(false);
   readonly tournamentName = signal('');
   readonly participantsPerGroup = signal(2);
-
-  // Formulaire des participants
   readonly groups = signal<TournamentGroup[]>([]);
-  readonly participantSearches = signal<Record<string, string>>({});
-
-  // Vue
   readonly currentView = signal<'list' | 'create' | 'participants' | 'bracket'>('list');
-  readonly fightSides = ['A', 'B'] as const;
-  readonly orderedFights = computed(() => {
-    const bracket = this.currentTournament()?.bracket;
-    return bracket ? this.collectFights(bracket) : [];
-  });
-  readonly nextFight = computed(
-    () => this.orderedFights().find((fight) => fight.participant1 && fight.participant2 && !fight.winner) ?? null,
-  );
+  readonly activeParticipantField = signal<string | null>(null);
+  readonly participantSearch = signal<Record<string, string>>({});
 
   formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleDateString('fr-FR');
@@ -53,6 +47,7 @@ export class TournoisPageComponent {
 
   openCreateForm(): void {
     this.currentView.set('create');
+    this.showCreateForm.set(true);
     this.tournamentName.set('');
     this.participantsPerGroup.set(2);
   }
@@ -64,39 +59,27 @@ export class TournoisPageComponent {
       return;
     }
 
-    const numParticipants = Number(this.participantsPerGroup());
-    if (!Number.isInteger(numParticipants) || numParticipants < 1 || numParticipants > 20) {
-      alert('Chaque équipe doit contenir entre 1 et 20 combattants.');
+    const teamSize = Number(this.participantsPerGroup());
+    if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 20) {
+      alert('Le nombre de combattants par équipe doit être compris entre 1 et 20.');
       return;
     }
-    this.participantsPerGroup.set(numParticipants);
 
-    const newGroups: TournamentGroup[] = [
-      {
-        id: this.newGroupId(),
-        name: '',
-        participants: Array(numParticipants).fill(''),
-      },
-      {
-        id: this.newGroupId(),
-        name: '',
-        participants: Array(numParticipants).fill(''),
-      },
-    ];
-
-    this.groups.set(newGroups);
+    this.groups.set([this.createGroup(0, teamSize), this.createGroup(1, teamSize)]);
     this.currentView.set('participants');
   }
 
-  addGroup(): void {
-    const numParticipants = this.participantsPerGroup();
-    const currentGroups = this.groups();
-    const newGroup: TournamentGroup = {
-      id: this.newGroupId(),
+  private createGroup(index: number, teamSize: number): TournamentGroup {
+    return {
+      id: `group-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
       name: '',
-      participants: Array(numParticipants).fill(''),
+      participants: Array(teamSize).fill(''),
     };
-    this.groups.set([...currentGroups, newGroup]);
+  }
+
+  addGroup(): void {
+    const currentGroups = this.groups();
+    this.groups.set([...currentGroups, this.createGroup(currentGroups.length, Number(this.participantsPerGroup()))]);
   }
 
   removeGroup(index: number): void {
@@ -108,64 +91,78 @@ export class TournoisPageComponent {
     this.groups.set(currentGroups.filter((_, i) => i !== index));
   }
 
-  participantSearchKey(groupId: string, participantIndex: number): string {
-    return `${groupId}:${participantIndex}`;
+  participantFieldId(groupIndex: number, participantIndex: number): string {
+    return `${this.groups()[groupIndex]?.id}-${participantIndex}`;
   }
 
-  participantSearchText(groupId: string, participantIndex: number): string {
-    return this.participantSearches()[this.participantSearchKey(groupId, participantIndex)] ?? '';
+  participantInputValue(groupIndex: number, participantIndex: number): string {
+    const fieldId = this.participantFieldId(groupIndex, participantIndex);
+    if (this.activeParticipantField() === fieldId) {
+      return this.participantSearch()[fieldId] ?? '';
+    }
+    return this.players().find((player) => player.id === this.groups()[groupIndex]?.participants[participantIndex])?.name ?? '';
   }
 
-  setParticipantSearch(groupId: string, participantIndex: number, value: string): void {
-    const key = this.participantSearchKey(groupId, participantIndex);
-    this.participantSearches.set({ ...this.participantSearches(), [key]: value });
+  focusParticipantSearch(groupIndex: number, participantIndex: number): void {
+    const fieldId = this.participantFieldId(groupIndex, participantIndex);
+    const selectedId = this.groups()[groupIndex]?.participants[participantIndex];
+    const selectedName = this.players().find((player) => player.id === selectedId)?.name ?? '';
+    this.activeParticipantField.set(fieldId);
+    this.participantSearch.update((queries) => ({ ...queries, [fieldId]: selectedName }));
   }
 
-  matchingPlayers(groupId: string, participantIndex: number): Player[] {
-    const query = this.normalizeSearch(this.participantSearchText(groupId, participantIndex));
-    const selectedIds = new Set(this.groups().flatMap((group) => group.participants).filter(Boolean));
+  updateParticipantSearch(groupIndex: number, participantIndex: number, query: string): void {
+    const fieldId = this.participantFieldId(groupIndex, participantIndex);
+    this.activeParticipantField.set(fieldId);
+    this.participantSearch.update((queries) => ({ ...queries, [fieldId]: query }));
+
+    const updatedGroups = this.groups().map((group, index) => {
+      if (index !== groupIndex) return group;
+      const participants = [...group.participants];
+      participants[participantIndex] = '';
+      return { ...group, participants };
+    });
+    this.groups.set(updatedGroups);
+  }
+
+  participantSuggestions(groupIndex: number, participantIndex: number): Player[] {
+    const fieldId = this.participantFieldId(groupIndex, participantIndex);
+    const query = this.normalizeSearch(this.participantSearch()[fieldId] ?? '');
+    const alreadySelected = new Set(
+      this.groups().flatMap((group, currentGroupIndex) =>
+        group.participants
+          .filter((_, currentParticipantIndex) => currentGroupIndex !== groupIndex || currentParticipantIndex !== participantIndex),
+      ),
+    );
+
     return this.players()
-      .filter(
-        (player) =>
-          !selectedIds.has(player.id) ||
-          this.groups().some((group) => group.id === groupId && group.participants[participantIndex] === player.id),
-      )
-      .filter((player) => !query || this.normalizeSearch(player.name).includes(query))
-      .sort((left, right) => left.name.localeCompare(right.name, 'fr'))
-      .slice(0, 8);
+      .filter((player) => !alreadySelected.has(player.id) && this.normalizeSearch(player.name).includes(query))
+      .sort((a, b) => {
+        const aStartsWithQuery = this.normalizeSearch(a.name).startsWith(query);
+        const bStartsWithQuery = this.normalizeSearch(b.name).startsWith(query);
+        return Number(bStartsWithQuery) - Number(aStartsWithQuery) || a.name.localeCompare(b.name, 'fr');
+      });
   }
 
-  selectParticipant(groupId: string, participantIndex: number, player: Player): void {
-    this.groups.set(
-      this.groups().map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              participants: group.participants.map((participant, index) =>
-                index === participantIndex ? player.id : participant,
-              ),
-            }
-          : group,
-      ),
+  private normalizeSearch(value: string): string {
+    return value.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  selectParticipant(groupIndex: number, participantIndex: number, player: Player): void {
+    const updatedGroups = this.groups().map((group, index) => {
+      if (index !== groupIndex) return group;
+      const participants = [...group.participants];
+      participants[participantIndex] = player.id;
+      return { ...group, participants };
+    });
+    this.groups.set(updatedGroups);
+    this.activeParticipantField.set(null);
+  }
+
+  updateGroupName(groupIndex: number, value: string): void {
+    this.groups.update((groups) =>
+      groups.map((group, index) => (index === groupIndex ? { ...group, name: value } : group)),
     );
-    this.setParticipantSearch(groupId, participantIndex, '');
-  }
-
-  removeParticipant(groupId: string, participantIndex: number): void {
-    this.groups.set(
-      this.groups().map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              participants: group.participants.map((participant, index) => (index === participantIndex ? '' : participant)),
-            }
-          : group,
-      ),
-    );
-  }
-
-  updateGroupName(groupId: string, value: string): void {
-    this.groups.set(this.groups().map((group) => (group.id === groupId ? { ...group, name: value } : group)));
   }
 
   createTournament(): void {
@@ -176,63 +173,29 @@ export class TournoisPageComponent {
     }
 
     const groups = this.groups();
-    if (groups.length < 2 || groups.some((group) => group.participants.some((id) => !id))) {
-      alert('Chaque équipe doit avoir tous ses combattants sélectionnés.');
+    const allParticipants = groups.flatMap((group) => group.participants);
+    if (groups.length < 2 || allParticipants.some((id) => !id)) {
+      alert('Sélectionnez un combattant enregistré pour chaque place de chaque équipe.');
       return;
     }
 
-    const selectedIds = groups.flatMap((group) => group.participants);
-    if (new Set(selectedIds).size !== selectedIds.length) {
-      alert('Un combattant ne peut être inscrit que dans une seule équipe.');
+    const uniqueParticipants = new Set(allParticipants);
+    if (uniqueParticipants.size !== allParticipants.length) {
+      alert('Un combattant ne peut être sélectionné qu’une seule fois dans le tournoi.');
       return;
     }
-    const registeredIds = new Set(this.players().map((player) => player.id));
-    if (selectedIds.some((id) => !registeredIds.has(id))) {
-      alert('Un combattant sélectionné n’existe plus dans la liste des combattants.');
+    if (allParticipants.some((id) => !this.players().some((player) => player.id === id))) {
+      alert('Un combattant sélectionné n’existe plus dans la base de données. Veuillez le sélectionner à nouveau.');
       return;
     }
 
     this.tournamentService.createTournament(name, groups);
-    this.currentView.set('list');
+    this.currentView.set('bracket');
   }
 
   selectTournament(tournament: Tournament): void {
     this.tournamentService.selectTournament(tournament);
     this.currentView.set('bracket');
-  }
-
-  teamLabel(tournament: Tournament, teamId: string): string {
-    const group = tournament.groups.find((candidate) => candidate.id === teamId);
-    return group ? tournamentTeamLabel(group, this.players()) : teamId;
-  }
-
-  playerById(id: string): Player | undefined {
-    return this.players().find((player) => player.id === id);
-  }
-
-  teamOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string {
-    const teamId = side === 'A' ? match.participant1 : match.participant2;
-    const otherTeamId = side === 'A' ? match.participant2 : match.participant1;
-    if (!teamId || !otherTeamId) return '-';
-    const probability = expectedScoreA(this.teamElo(tournament, teamId), this.teamElo(tournament, otherTeamId));
-    return computeOdds(side === 'A' ? probability : 1 - probability, this.settingsService.settings().baseOdds);
-  }
-
-  teamChance(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string {
-    const teamId = side === 'A' ? match.participant1 : match.participant2;
-    const otherTeamId = side === 'A' ? match.participant2 : match.participant1;
-    if (!teamId || !otherTeamId) return '0';
-    const probability = expectedScoreA(this.teamElo(tournament, teamId), this.teamElo(tournament, otherTeamId));
-    return ((side === 'A' ? probability : 1 - probability) * 100).toFixed(0);
-  }
-
-  chooseWinner(match: TournamentMatch, winner: string): void {
-    if (!this.isAdmin() || this.nextFight()?.id !== match.id) return;
-    this.tournamentService.updateMatchWinner(match.id, winner);
-  }
-
-  isNextFight(match: TournamentMatch): boolean {
-    return this.nextFight()?.id === match.id;
   }
 
   deleteTournament(tournamentId: string): void {
@@ -254,42 +217,51 @@ export class TournoisPageComponent {
     this.currentView.set('participants');
   }
 
-  private collectFights(match: TournamentMatch): TournamentMatch[] {
-    const fightsByDepth = new Map<number, TournamentMatch[]>();
-    const collect = (current: TournamentMatch, depth: number): void => {
-      if (current.children) {
-        for (const child of current.children) {
-          if (child) collect(child, depth + 1);
-        }
+  teamLabel(tournament: Tournament, groupId: string | undefined): string {
+    const group = tournament.groups.find((candidate) => candidate.id === groupId);
+    return group ? tournamentTeamLabel(group, this.players()) : 'En attente';
+  }
+
+  matchOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string | null {
+    const groupId = side === 'A' ? match.participant1 : match.participant2;
+    const group = tournament.groups.find((candidate) => candidate.id === groupId);
+    if (!group) return null;
+
+    const teamPlayers = group.participants.map((id) => this.players().find((player) => player.id === id));
+    const resolvedTeam = teamPlayers.filter((player): player is Player => !!player);
+    if (resolvedTeam.length !== group.participants.length || resolvedTeam.length === 0) return null;
+
+    const otherGroupId = side === 'A' ? match.participant2 : match.participant1;
+    const otherGroup = tournament.groups.find((candidate) => candidate.id === otherGroupId);
+    if (!otherGroup) return null;
+    const otherPlayers = otherGroup.participants.map((id) => this.players().find((player) => player.id === id));
+    const resolvedOtherTeam = otherPlayers.filter((player): player is Player => !!player);
+    if (resolvedOtherTeam.length !== otherGroup.participants.length || resolvedOtherTeam.length === 0) return null;
+
+    const eloA = averageElo(resolvedTeam.map((player) => player.elo));
+    const eloB = averageElo(resolvedOtherTeam.map((player) => player.elo));
+    const probA = expectedScoreA(eloA, eloB);
+    const probability = side === 'A' ? probA : 1 - probA;
+    return computeOdds(probability, this.settingsService.settings().baseOdds);
+  }
+
+  setMatchWinner(match: TournamentMatch, winner: string): void {
+    if (!this.isAdmin() || !match.participant1 || !match.participant2 || match.winner) return;
+    this.tournamentService.updateMatchWinner(match.id, winner);
+  }
+
+  private extractMatchRounds(bracket: TournamentMatch | null): MatchRound[] {
+    if (!bracket) return [];
+    const byDepth = new Map<number, MatchRound>();
+    const visit = (match: TournamentMatch, depth: number): void => {
+      if (!match.isBye) {
+        const round = byDepth.get(depth) ?? { name: match.round, matches: [] };
+        round.matches.push(match);
+        byDepth.set(depth, round);
       }
-      const roundFights = fightsByDepth.get(depth) ?? [];
-      roundFights.push(current);
-      fightsByDepth.set(depth, roundFights);
+      match.children?.forEach((child) => visit(child, depth + 1));
     };
-    collect(match, 0);
-    return [...fightsByDepth.entries()]
-      .sort(([leftDepth], [rightDepth]) => rightDepth - leftDepth)
-      .flatMap(([, roundFights]) => roundFights);
-  }
-
-  private teamElo(tournament: Tournament, teamId: string): number {
-    const group = tournament.groups.find((candidate) => candidate.id === teamId);
-    if (!group) return 1000;
-    const elos = group.participants
-      .map((id) => this.players().find((player) => player.id === id)?.elo)
-      .filter((elo): elo is number => elo !== undefined);
-    return elos.length ? averageElo(elos) : 1000;
-  }
-
-  private newGroupId(): string {
-    return `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  }
-
-  private normalizeSearch(value: string): string {
-    return value
-      .trim()
-      .toLocaleLowerCase('fr')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+    visit(bracket, 0);
+    return [...byDepth.entries()].sort(([depthA], [depthB]) => depthB - depthA).map(([, round]) => round);
   }
 }

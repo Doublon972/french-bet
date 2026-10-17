@@ -41,7 +41,7 @@ export class TournamentBracketComponent implements OnChanges {
       if (!rounds[currentDepth]) {
         rounds[currentDepth] = { name: m.round, matches: [] };
       }
-      rounds[currentDepth].matches.push(m);
+      if (!m.isBye) rounds[currentDepth].matches.push(m);
 
       if (m.children && m.children.length > 0) {
         m.children.forEach((child) => {

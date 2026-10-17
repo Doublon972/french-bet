@@ -10,7 +10,8 @@ export interface TournamentMatch {
   participant1?: string;
   participant2?: string;
   winner?: string;
-  children?: [TournamentMatch | null, TournamentMatch | null];
+  isBye?: boolean;
+  children?: TournamentMatch[];
 }
 
 export interface Tournament {
