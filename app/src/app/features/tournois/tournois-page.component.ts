@@ -113,6 +113,10 @@ export class TournoisPageComponent {
       return;
     }
 
+    if (allParticipants.length < 4) {
+      alert('Pour un meilleur affichage de l\'arbre, il est recommandé d\'avoir au moins 4 participants. Vous pouvez créer le tournoi quand même.');
+    }
+
     this.tournamentService.createTournament(name, groups);
     this.currentView.set('list');
   }

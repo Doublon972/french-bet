@@ -80,11 +80,14 @@ export class TournamentService {
       participant2: p2,
     });
 
+    // Mélanger les participants
+    const shuffled = this.shuffleArray([...participants]);
+
     // Créer les matchs du premier tour
     let currentRoundMatches: TournamentMatch[] = [];
-    for (let i = 0; i < participants.length; i += 2) {
-      const p1 = participants[i];
-      const p2 = participants[i + 1];
+    for (let i = 0; i < shuffled.length; i += 2) {
+      const p1 = shuffled[i];
+      const p2 = shuffled[i + 1];
       currentRoundMatches.push(createMatch(rounds[0], p1, p2));
     }
 
