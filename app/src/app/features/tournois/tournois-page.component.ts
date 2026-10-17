@@ -19,7 +19,6 @@ export class TournoisPageComponent {
   // Formulaire de création
   readonly showCreateForm = signal(false);
   readonly tournamentName = signal('');
-  readonly groupCount = signal(2);
   readonly participantsPerGroup = signal(2);
 
   // Formulaire des participants
@@ -37,7 +36,6 @@ export class TournoisPageComponent {
     this.currentView.set('create');
     this.showCreateForm.set(true);
     this.tournamentName.set('');
-    this.groupCount.set(2);
     this.participantsPerGroup.set(2);
   }
 
@@ -48,20 +46,44 @@ export class TournoisPageComponent {
       return;
     }
 
-    const numGroups = this.groupCount();
     const numParticipants = this.participantsPerGroup();
 
-    const newGroups: TournamentGroup[] = [];
-    for (let i = 0; i < numGroups; i++) {
-      newGroups.push({
-        id: `group-${i}`,
+    // Créer 2 groupes par défaut
+    const newGroups: TournamentGroup[] = [
+      {
+        id: `group-0`,
         name: '',
         participants: Array(numParticipants).fill(''),
-      });
-    }
+      },
+      {
+        id: `group-1`,
+        name: '',
+        participants: Array(numParticipants).fill(''),
+      },
+    ];
 
     this.groups.set(newGroups);
     this.currentView.set('participants');
+  }
+
+  addGroup(): void {
+    const numParticipants = this.participantsPerGroup();
+    const currentGroups = this.groups();
+    const newGroup: TournamentGroup = {
+      id: `group-${currentGroups.length}`,
+      name: '',
+      participants: Array(numParticipants).fill(''),
+    };
+    this.groups.set([...currentGroups, newGroup]);
+  }
+
+  removeGroup(index: number): void {
+    const currentGroups = this.groups();
+    if (currentGroups.length <= 2) {
+      alert('Il faut au minimum 2 groupes pour créer un tournoi');
+      return;
+    }
+    this.groups.set(currentGroups.filter((_, i) => i !== index));
   }
 
   updateParticipantName(groupIndex: number, participantIndex: number, value: string): void {
