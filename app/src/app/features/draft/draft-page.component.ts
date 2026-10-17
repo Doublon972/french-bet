@@ -137,7 +137,10 @@ export class DraftPageComponent {
   resolveMatch(winner: TeamSide): void {
     const match = this.activeMatch();
     if (!match) return;
-    this.matchService.resolveMatch(match, winner, this.settings());
+    this.matchService.resolveMatch(match, winner, this.settings()).catch((error) => {
+      console.error('Erreur lors de la résolution du match', error);
+      alert('Impossible d’enregistrer le résultat du match. Vérifiez votre connexion et réessayez.');
+    });
   }
 
   closeSession(): void {

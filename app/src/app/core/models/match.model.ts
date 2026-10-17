@@ -9,6 +9,10 @@ export interface ActiveMatch {
   probA: number;
   probB: number;
   bets?: Record<string, Bet>;
+  tournamentId?: string;
+  tournamentMatchId?: string;
+  tournamentParticipantA?: string;
+  tournamentParticipantB?: string;
 }
 
 export interface HistoryEntry {

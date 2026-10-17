@@ -16,6 +16,16 @@
           </svg>
           Retour
         </button>
+      } @else {
+        <a
+          routerLink="/"
+          class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Retour à l’accueil
+        </a>
       }
     </div>
 
@@ -239,7 +249,7 @@
         @if (isAdmin()) {
           <aside class="rounded-xl border border-indigo-500/30 bg-slate-800 p-5 shadow-2xl">
             <h3 class="mb-1 text-xl font-bold text-white">Administration des combats</h3>
-            <p class="mb-5 text-sm text-slate-400">Les combats sont classés dans l’ordre du tournoi. Choisissez le vainqueur pour débloquer le tour suivant.</p>
+            <p class="mb-5 text-sm text-slate-400">Démarrez le prochain combat pour ouvrir la draft complète, enregistrer les paris et déclarer le vainqueur.</p>
 
             @if (matchRounds().length === 0) {
               <p class="text-sm text-slate-500">Aucun combat à afficher.</p>
@@ -252,32 +262,35 @@
                     <div class="rounded-xl border border-slate-700 bg-slate-900/80 p-3">
                       <p class="mb-3 text-xs text-slate-500">Combat {{ matchIndex + 1 }}</p>
                       <div class="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
-                        <button
-                          type="button"
-                          (click)="setMatchWinner(match, match.participant1!)"
-                          [disabled]="!match.participant1 || !match.participant2 || !!match.winner"
-                          [class]="match.winner === match.participant1 ? 'border-emerald-500 bg-emerald-900/40 text-emerald-200' : 'border-blue-500/30 bg-blue-950/40 text-slate-200'"
-                          class="rounded-lg border p-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
-                        >
+                        <div class="rounded-lg border border-blue-500/30 bg-blue-950/40 p-2 text-left text-slate-200">
                           <span class="block text-sm font-semibold">{{ teamLabel(currentTournament()!, match.participant1) }}</span>
                           <span class="mt-1 block text-xs text-blue-300">Cote x{{ matchOdds(currentTournament()!, match, 'A') ?? '—' }}</span>
-                        </button>
+                        </div>
                         <span class="self-center text-xs font-bold text-slate-600">VS</span>
-                        <button
-                          type="button"
-                          (click)="setMatchWinner(match, match.participant2!)"
-                          [disabled]="!match.participant1 || !match.participant2 || !!match.winner"
-                          [class]="match.winner === match.participant2 ? 'border-emerald-500 bg-emerald-900/40 text-emerald-200' : 'border-red-500/30 bg-red-950/40 text-slate-200'"
-                          class="rounded-lg border p-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50"
-                        >
+                        <div class="rounded-lg border border-red-500/30 bg-red-950/40 p-2 text-left text-slate-200">
                           <span class="block text-sm font-semibold">{{ teamLabel(currentTournament()!, match.participant2) }}</span>
                           <span class="mt-1 block text-xs text-red-300">Cote x{{ matchOdds(currentTournament()!, match, 'B') ?? '—' }}</span>
-                        </button>
+                        </div>
                       </div>
                       @if (match.winner) {
                         <p class="mt-3 text-xs font-semibold text-emerald-400">Vainqueur : {{ teamLabel(currentTournament()!, match.winner) }}</p>
-                      } @else if (!match.participant1 || !match.participant2) {
+                      } @else if (match.id === currentTournamentMatch()?.id && activeTournamentMatch()) {
+                        <p class="mt-3 text-xs font-semibold text-amber-300">Combat en cours — draft et paris ouverts ci-dessous.</p>
+                      } @else if (match.id === currentTournamentMatch()?.id && (!match.participant1 || !match.participant2)) {
                         <p class="mt-3 text-xs text-slate-500">En attente des vainqueurs du tour précédent.</p>
+                      } @else if (match.id === currentTournamentMatch()?.id && activeMatch()) {
+                        <p class="mt-3 text-xs text-amber-300">Un autre match est déjà en cours sur la page principale.</p>
+                      } @else if (match.id === currentTournamentMatch()?.id) {
+                        <button
+                          type="button"
+                          (click)="startTournamentMatch(match)"
+                          class="mt-3 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          [disabled]="!match.participant1 || !match.participant2"
+                        >
+                          Démarrer le combat
+                        </button>
+                      } @else {
+                        <p class="mt-3 text-xs text-slate-500">Combat suivant : en attente.</p>
                       }
                     </div>
                   }
@@ -287,6 +300,19 @@
           </aside>
         }
       </div>
+
+      @if (activeTournamentMatch(); as activeMatch) {
+        <div class="mt-6">
+          <app-active-match-panel
+            [match]="activeMatch"
+            [isAdmin]="isAdmin()"
+            (placeBet)="placeTournamentBet($event)"
+            (cancelBet)="cancelTournamentBet($event)"
+            (resolveMatch)="resolveTournamentMatch($event)"
+            (cancelMatch)="cancelTournamentMatch()"
+          />
+        </div>
+      }
     }
   </div>
 </div>

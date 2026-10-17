@@ -150,8 +150,8 @@ export class TournamentService {
     }
   }
 
-  updateMatchWinner(matchId: string, winner: string): void {
-    const tournament = this.currentTournament();
+  updateMatchWinner(tournamentId: string, matchId: string, winner: string): void {
+    const tournament = this.tournaments().find((candidate) => candidate.id === tournamentId);
     if (!tournament || !tournament.bracket) return;
 
     let changed = false;
@@ -184,6 +184,8 @@ export class TournamentService {
     const updated = this.tournaments().map((t) => (t.id === tournament.id ? updatedTournament : t));
     this.tournaments.set(updated);
     this.saveTournaments();
-    this.currentTournament.set(updatedTournament);
+    if (this.currentTournament()?.id === tournament.id) {
+      this.currentTournament.set(updatedTournament);
+    }
   }
 }

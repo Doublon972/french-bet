@@ -1,10 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { MatchService } from '../../core/services/match.service';
 import { PlayersService } from '../../core/services/players.service';
 import { SettingsService } from '../../core/services/settings.service';
-import { Player } from '../../core/models';
+import { ActiveMatch, Player } from '../../core/models';
+import { TeamSide } from '../../core/models/bet.model';
 import { averageElo, computeOdds, expectedScoreA } from '../../core/utils/elo.util';
+import { ActiveMatchPanelComponent } from '../draft/active-match-panel/active-match-panel.component';
 import { TournamentService } from './tournament.service';
 import { Tournament, TournamentGroup, TournamentMatch } from './tournament.model';
 import { tournamentTeamLabel } from './tournament.util';
@@ -18,11 +22,12 @@ interface MatchRound {
 @Component({
   selector: 'app-tournois-page',
   standalone: true,
-  imports: [FormsModule, TournamentBracketComponent],
+  imports: [FormsModule, RouterLink, TournamentBracketComponent, ActiveMatchPanelComponent],
   templateUrl: './tournois-page.component.html',
 })
 export class TournoisPageComponent {
   private readonly tournamentService = inject(TournamentService);
+  private readonly matchService = inject(MatchService);
   private readonly playersService = inject(PlayersService);
   private readonly settingsService = inject(SettingsService);
   private readonly authService = inject(AuthService);
@@ -31,7 +36,22 @@ export class TournoisPageComponent {
   readonly currentTournament = this.tournamentService.currentTournament;
   readonly players = computed<Player[]>(() => this.playersService.players() ?? []);
   readonly isAdmin = this.authService.isAdmin;
+  readonly activeMatch = this.matchService.activeMatch;
   readonly matchRounds = computed(() => this.extractMatchRounds(this.currentTournament()?.bracket ?? null));
+  readonly currentTournamentMatch = computed(
+    () => this.matchRounds().flatMap((round) => round.matches).find((match) => !match.winner) ?? null,
+  );
+  readonly activeTournamentMatch = computed<ActiveMatch | null>(() => {
+    const tournament = this.currentTournament();
+    const match = this.currentTournamentMatch();
+    const active = this.activeMatch();
+    return tournament &&
+      match &&
+      active?.tournamentId === tournament.id &&
+      active.tournamentMatchId === match.id
+      ? active
+      : null;
+  });
 
   readonly showCreateForm = signal(false);
   readonly tournamentName = signal('');
@@ -245,9 +265,86 @@ export class TournoisPageComponent {
     return computeOdds(probability, this.settingsService.settings().baseOdds);
   }
 
-  setMatchWinner(match: TournamentMatch, winner: string): void {
-    if (!this.isAdmin() || !match.participant1 || !match.participant2 || match.winner) return;
-    this.tournamentService.updateMatchWinner(match.id, winner);
+  async startTournamentMatch(match: TournamentMatch): Promise<void> {
+    const tournament = this.currentTournament();
+    if (!this.isAdmin() || !tournament || match.id !== this.currentTournamentMatch()?.id) return;
+    const activeMatch = this.activeMatch();
+    if (activeMatch === undefined) {
+      alert('Le match en cours est encore en chargement. Réessayez dans un instant.');
+      return;
+    }
+    if (activeMatch) {
+      alert(
+        activeMatch.tournamentId === tournament.id && activeMatch.tournamentMatchId === match.id
+          ? 'Ce combat est déjà en cours.'
+          : 'Un autre match est déjà en cours. Terminez-le ou annulez-le avant de démarrer ce combat.',
+      );
+      return;
+    }
+    if (!match.participant1 || !match.participant2) return;
+
+    const teamA = this.getTeamPlayers(tournament, match.participant1);
+    const teamB = this.getTeamPlayers(tournament, match.participant2);
+    if (!teamA || !teamB) {
+      alert('Impossible de retrouver tous les combattants de ces équipes dans la base de données.');
+      return;
+    }
+
+    try {
+      await this.matchService.createMatch(teamA, teamB, this.settingsService.settings(), {
+        tournamentId: tournament.id,
+        matchId: match.id,
+        participantA: match.participant1,
+        participantB: match.participant2,
+      });
+    } catch (error) {
+      console.error('Erreur lors du démarrage du combat du tournoi', error);
+      alert('Impossible de démarrer ce combat. Vérifiez votre connexion et réessayez.');
+    }
+  }
+
+  placeTournamentBet(payload: { team: TeamSide; user: string; amount: number }): void {
+    const match = this.activeTournamentMatch();
+    if (!match) return;
+    this.matchService
+      .placeBet(match, payload.team, payload.user, payload.amount)
+      .catch((error) => {
+        console.error('Erreur lors de l’ajout du pari du tournoi', error);
+        alert('Impossible d’ajouter ce pari. Vérifiez votre connexion et réessayez.');
+      });
+  }
+
+  cancelTournamentBet(betId: string): void {
+    this.matchService.cancelActiveBet(betId).catch((error) => {
+      console.error('Erreur lors de l’annulation du pari du tournoi', error);
+      alert('Impossible d’annuler ce pari. Vérifiez votre connexion et réessayez.');
+    });
+  }
+
+  resolveTournamentMatch(winner: TeamSide): void {
+    const match = this.activeTournamentMatch();
+    if (!match) return;
+    this.matchService
+      .resolveMatch(match, winner, this.settingsService.settings())
+      .catch((error) => {
+        console.error('Erreur lors de la résolution du combat du tournoi', error);
+        alert('Impossible d’enregistrer le résultat du combat. Vérifiez votre connexion et réessayez.');
+      });
+  }
+
+  cancelTournamentMatch(): void {
+    this.matchService.cancelMatch().catch((error) => {
+      console.error('Erreur lors de l’annulation du combat du tournoi', error);
+      alert('Impossible d’annuler ce combat. Vérifiez votre connexion et réessayez.');
+    });
+  }
+
+  private getTeamPlayers(tournament: Tournament, groupId: string): Player[] | null {
+    const group = tournament.groups.find((candidate) => candidate.id === groupId);
+    if (!group) return null;
+    const players = group.participants.map((id) => this.players().find((player) => player.id === id));
+    if (players.some((player) => !player)) return null;
+    return players.filter((player): player is Player => !!player);
   }
 
   private extractMatchRounds(bracket: TournamentMatch | null): MatchRound[] {

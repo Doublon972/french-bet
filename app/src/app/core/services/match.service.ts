@@ -9,18 +9,32 @@ import { TeamSide } from '../models/bet.model';
 import { applyEloFloor, averageElo, computeOdds, eloDeltaOnLoss, eloDeltaOnWin, expectedScoreA } from '../utils/elo.util';
 import { objectValue$ } from '../utils/rtdb.util';
 import { DraftService } from './draft.service';
+import { TournamentService } from '../../features/tournois/tournament.service';
+
+export interface TournamentMatchContext {
+  tournamentId: string;
+  matchId: string;
+  participantA: string;
+  participantB: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class MatchService {
   private readonly db: Database = inject(FIREBASE_DATABASE);
   private readonly draftService = inject(DraftService);
+  private readonly tournamentService = inject(TournamentService);
 
   readonly activeMatch: Signal<ActiveMatch | null | undefined> = toSignal(
     objectValue$<ActiveMatch>(this.db, 'activeMatch'),
   );
 
   /** Crée le match actif à partir des équipes formées en draft, puis vide la draft (comme l'original). */
-  async createMatch(teamAPlayers: Player[], teamBPlayers: Player[], settings: AppSettings): Promise<void> {
+  async createMatch(
+    teamAPlayers: Player[],
+    teamBPlayers: Player[],
+    settings: AppSettings,
+    tournamentContext?: TournamentMatchContext,
+  ): Promise<void> {
     const eloA = averageElo(teamAPlayers.map((p) => p.elo));
     const eloB = averageElo(teamBPlayers.map((p) => p.elo));
 
@@ -35,10 +49,18 @@ export class MatchService {
       probA,
       probB,
       bets: {},
+      ...(tournamentContext
+        ? {
+            tournamentId: tournamentContext.tournamentId,
+            tournamentMatchId: tournamentContext.matchId,
+            tournamentParticipantA: tournamentContext.participantA,
+            tournamentParticipantB: tournamentContext.participantB,
+          }
+        : {}),
     };
 
     await set(ref(this.db, 'activeMatch'), newMatch);
-    await this.draftService.clearDraft();
+    if (!tournamentContext) await this.draftService.clearDraft();
   }
 
   cancelMatch(): Promise<void> {
@@ -61,7 +83,7 @@ export class MatchService {
   }
 
   /** Résout le match en cours : calcule les deltas Elo, met à jour les joueurs et archive dans l'historique. */
-  resolveMatch(activeMatch: ActiveMatch, winner: TeamSide, settings: AppSettings): Promise<unknown> {
+  async resolveMatch(activeMatch: ActiveMatch, winner: TeamSide, settings: AppSettings): Promise<void> {
     const eloChangeA = winner === 'A'
       ? eloDeltaOnWin(settings.kWin, activeMatch.probA)
       : eloDeltaOnLoss(settings.kLoss, activeMatch.probA);
@@ -104,6 +126,20 @@ export class MatchService {
     updates[`history/${newHistoryRef.key}`] = historyEntry;
     updates['activeMatch'] = null;
 
-    return update(ref(this.db), updates);
+    await update(ref(this.db), updates);
+
+    if (
+      activeMatch.tournamentId &&
+      activeMatch.tournamentMatchId &&
+      activeMatch.tournamentParticipantA &&
+      activeMatch.tournamentParticipantB
+    ) {
+      const tournamentWinner = winner === 'A' ? activeMatch.tournamentParticipantA : activeMatch.tournamentParticipantB;
+      this.tournamentService.updateMatchWinner(
+        activeMatch.tournamentId,
+        activeMatch.tournamentMatchId,
+        tournamentWinner,
+      );
+    }
   }
 }
