@@ -5,7 +5,14 @@
         <div class="round-header">{{ round.name }}</div>
         <div class="matches">
           @for (match of round.matches; track match.id) {
-            <div class="match" [class.final-match]="round.name === 'Finale'">
+            <div
+              class="match"
+              [class.final-match]="round.name === 'Finale'"
+              [class.selected]="selectedMatchId === match.id"
+              [class.disabled]="isMatchDisabled(match)"
+              (click)="onSelectMatch(match)"
+              title="Cliquez pour lancer ce match"
+            >
               @if (match.participant1) {
                 <div class="participant" [class.winner]="match.winner === match.participant1">
                   <span>{{ participantLabel(match.participant1) }}</span>

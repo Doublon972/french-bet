@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { Player } from '../../../core/models';
 import { TournamentGroup, TournamentMatch } from '../tournament.model';
 import { tournamentTeamLabel } from '../tournament.util';
@@ -18,6 +18,8 @@ export class TournamentBracketComponent implements OnChanges {
   @Input() match: TournamentMatch | null = null;
   @Input() groups: TournamentGroup[] = [];
   @Input() players: Player[] = [];
+  @Input() selectedMatchId: string | null = null;
+  @Output() matchSelect = new EventEmitter<TournamentMatch>();
 
   rounds: Round[] = [];
 
@@ -27,6 +29,25 @@ export class TournamentBracketComponent implements OnChanges {
     } else {
       this.rounds = [];
     }
+  }
+
+  onSelectMatch(match: TournamentMatch): void {
+    if (this.canLaunchMatch(match)) {
+      this.matchSelect.emit(match);
+    }
+  }
+
+  canLaunchMatch(match: TournamentMatch): boolean {
+    // Un match peut être lancé si tous ses enfants ont un gagnant
+    if (!match.children || match.children.length === 0) {
+      return true; // Premier tour, peut être lancé
+    }
+
+    return match.children.every((child) => child.winner !== undefined);
+  }
+
+  isMatchDisabled(match: TournamentMatch): boolean {
+    return !this.canLaunchMatch(match);
   }
 
   participantLabel(id: string): string {

@@ -9,14 +9,16 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 3rem;
+  gap: 4rem;
   min-width: fit-content;
+  position: relative;
 }
 
 .round {
   display: flex;
   flex-direction: column;
   min-width: 220px;
+  position: relative;
 }
 
 .round-header {
@@ -33,7 +35,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 1.5rem;
+  gap: 2rem;
   flex: 1;
 }
 
@@ -49,27 +51,87 @@
   gap: 0.5rem;
   transition: all 0.3s ease;
   position: relative;
+  cursor: pointer;
 }
 
+/* Ligne de connexion vers le match suivant */
 .match::after {
   content: '';
   position: absolute;
-  right: -1.5rem;
+  right: -4rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 1.5rem;
+  width: 4rem;
   height: 2px;
-  background: #475569;
+  background: linear-gradient(90deg, #475569 0%, #6366f1 100%);
 }
 
 .round:last-child .match::after {
   display: none;
 }
 
+/* Lignes verticales pour connecter les matchs */
+.match::before {
+  content: '';
+  position: absolute;
+  right: -4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 0;
+  background: #6366f1;
+  transition: height 0.3s ease;
+}
+
+.round:not(:last-child) .match:first-child::before {
+  height: 1rem;
+  top: auto;
+  bottom: 50%;
+}
+
+.round:not(:last-child) .match:last-child::before {
+  height: 1rem;
+  top: 50%;
+  bottom: auto;
+}
+
+.round:not(:last-child) .match:not(:first-child):not(:last-child)::before {
+  height: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .match:hover {
   border-color: #8b5cf6;
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
-  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.match.selected {
+  border-color: #fbbf24;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.6);
+  animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(251, 191, 36, 0.8);
+  }
+}
+
+.match.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.match.disabled:hover {
+  transform: none;
+  border-color: #334155;
+  box-shadow: none;
 }
 
 .participant {
