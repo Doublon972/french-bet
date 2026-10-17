@@ -46,19 +46,11 @@ export class TournamentService {
   }
 
   private generateBracket(groups: TournamentGroup[]): TournamentMatch | null {
-    const allParticipants: string[] = [];
-    groups.forEach((group) => {
-      group.participants.forEach((participant) => {
-        allParticipants.push(`${group.name ? group.name + ' - ' : ''}${participant}`);
-      });
-    });
+    const teams = groups.filter((group) => group.participants.length > 0).map((group) => group.id);
 
-    if (allParticipants.length < 2) return null;
+    if (teams.length < 2) return null;
 
-    // Mélanger les participants aléatoirement
-    const shuffled = this.shuffleArray([...allParticipants]);
-
-    return this.buildBracket(shuffled);
+    return this.buildBracket(this.shuffleArray(teams));
   }
 
   private shuffleArray<T>(array: T[]): T[] {
@@ -72,39 +64,46 @@ export class TournamentService {
   private buildBracket(participants: string[]): TournamentMatch {
     const rounds = this.calculateRounds(participants.length);
     const matchId = () => Math.random().toString(36).substr(2, 9);
+    const createMatch = (round: string): TournamentMatch => ({ id: matchId(), round });
+    const power = 2 ** Math.ceil(Math.log2(participants.length));
+    const byeCount = power - participants.length;
+    const firstRoundMatchCount = participants.length - power / 2;
+    const firstRoundParticipants = participants.slice(byeCount);
+    const directQualifiers = participants.slice(0, byeCount);
+    const entries: Array<TournamentMatch | string> = [];
 
-    const createMatch = (round: string, p1?: string, p2?: string): TournamentMatch => ({
-      id: matchId(),
-      round,
-      participant1: p1,
-      participant2: p2,
-    });
-
-    // Mélanger les participants
-    const shuffled = this.shuffleArray([...participants]);
-
-    // Créer les matchs du premier tour
-    let currentRoundMatches: TournamentMatch[] = [];
-    for (let i = 0; i < shuffled.length; i += 2) {
-      const p1 = shuffled[i];
-      const p2 = shuffled[i + 1];
-      currentRoundMatches.push(createMatch(rounds[0], p1, p2));
+    for (let i = 0; i < firstRoundMatchCount; i++) {
+      const match = createMatch(rounds[0]);
+      match.participant1 = firstRoundParticipants[i * 2];
+      match.participant2 = firstRoundParticipants[i * 2 + 1];
+      entries.push(match);
+      if (directQualifiers[i]) entries.push(directQualifiers[i]);
     }
 
-    // Construire les tours suivants
     for (let roundIndex = 1; roundIndex < rounds.length; roundIndex++) {
-      const nextRoundMatches: TournamentMatch[] = [];
-      for (let i = 0; i < currentRoundMatches.length; i += 2) {
-        const match1 = currentRoundMatches[i];
-        const match2 = currentRoundMatches[i + 1];
-        const newMatch = createMatch(rounds[roundIndex]);
-        newMatch.children = [match1, match2];
-        nextRoundMatches.push(newMatch);
+      const nextRoundEntries: TournamentMatch[] = [];
+      for (let i = 0; i < entries.length; i += 2) {
+        const match = createMatch(rounds[roundIndex]);
+        const left = entries[i];
+        const right = entries[i + 1];
+        const children: [TournamentMatch | null, TournamentMatch | null] = [null, null];
+
+        if (typeof left === 'string') match.participant1 = left;
+        else children[0] = left;
+        if (typeof right === 'string') match.participant2 = right;
+        else children[1] = right;
+
+        match.children = children;
+        nextRoundEntries.push(match);
       }
-      currentRoundMatches = nextRoundMatches;
+      entries.splice(0, entries.length, ...nextRoundEntries);
     }
 
-    return currentRoundMatches[0];
+    const bracket = entries[0];
+    if (!bracket || typeof bracket === 'string') {
+      throw new Error('Impossible de générer le tableau du tournoi.');
+    }
+    return bracket;
   }
 
   private calculateRounds(participantCount: number): string[] {
@@ -150,32 +149,47 @@ export class TournamentService {
     const tournament = this.currentTournament();
     if (!tournament || !tournament.bracket) return;
 
-    const updateMatch = (match: TournamentMatch): boolean => {
+    const findMatch = (match: TournamentMatch): TournamentMatch | null => {
       if (match.id === matchId) {
-        match.winner = winner;
-        return true;
+        return match;
       }
       if (match.children) {
         for (const child of match.children) {
-          if (updateMatch(child)) {
-            // Mettre à jour le participant parent si les deux enfants ont un gagnant
-            if (match.children[0].winner && match.children[1].winner) {
-              const winnerIndex = Math.random() < 0.5 ? 0 : 1;
-              match.participant1 = match.children[0].winner;
-              match.participant2 = match.children[1].winner;
-            }
-            return true;
+          if (child) {
+            const found = findMatch(child);
+            if (found) return found;
           }
         }
       }
-      return false;
+      return null;
     };
 
-    updateMatch(tournament.bracket);
+    const selectedMatch = findMatch(tournament.bracket);
+    if (
+      !selectedMatch ||
+      !selectedMatch.participant1 ||
+      !selectedMatch.participant2 ||
+      (winner !== selectedMatch.participant1 && winner !== selectedMatch.participant2)
+    ) {
+      return;
+    }
+    selectedMatch.winner = winner;
 
-    // Mettre à jour dans la liste des tournois
+    const refreshParticipants = (match: TournamentMatch): string | undefined => {
+      if (match.children) {
+        if (match.children[0]) match.participant1 = refreshParticipants(match.children[0]);
+        if (match.children[1]) match.participant2 = refreshParticipants(match.children[1]);
+      }
+      if (match.winner !== match.participant1 && match.winner !== match.participant2) {
+        match.winner = undefined;
+      }
+      return match.winner;
+    };
+    refreshParticipants(tournament.bracket);
+
     const updated = this.tournaments().map((t) => (t.id === tournament.id ? tournament : t));
     this.tournaments.set(updated);
+    this.currentTournament.set({ ...tournament });
     this.saveTournaments();
   }
 }

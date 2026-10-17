@@ -8,7 +8,7 @@
             <div class="match" [class.final-match]="round.name === 'Finale'">
               @if (match.participant1) {
                 <div class="participant" [class.winner]="match.winner === match.participant1">
-                  <span>{{ match.participant1 }}</span>
+                  <span>{{ participantLabel(match.participant1) }}</span>
                   @if (match.winner === match.participant1) {
                     <span class="winner-badge">V</span>
                   }
@@ -19,7 +19,7 @@
 
               @if (match.participant2) {
                 <div class="participant" [class.winner]="match.winner === match.participant2">
-                  <span>{{ match.participant2 }}</span>
+                  <span>{{ participantLabel(match.participant2) }}</span>
                   @if (match.winner === match.participant2) {
                     <span class="winner-badge">V</span>
                   }

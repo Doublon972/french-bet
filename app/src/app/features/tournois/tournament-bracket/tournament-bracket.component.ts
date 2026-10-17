@@ -1,5 +1,7 @@
-import { Component, Input } from '@angular/core';
-import { TournamentMatch } from '../tournament.model';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Player } from '../../../core/models';
+import { TournamentGroup, TournamentMatch } from '../tournament.model';
+import { tournamentTeamLabel } from '../tournament.util';
 
 interface Round {
   name: string;
@@ -12,15 +14,24 @@ interface Round {
   templateUrl: './tournament-bracket.component.html',
   styleUrls: ['./tournament-bracket.component.css'],
 })
-export class TournamentBracketComponent {
+export class TournamentBracketComponent implements OnChanges {
   @Input() match: TournamentMatch | null = null;
+  @Input() groups: TournamentGroup[] = [];
+  @Input() players: Player[] = [];
 
   rounds: Round[] = [];
 
-  ngOnInit(): void {
+  ngOnChanges(_changes: SimpleChanges): void {
     if (this.match) {
       this.rounds = this.extractRounds(this.match);
+    } else {
+      this.rounds = [];
     }
+  }
+
+  participantLabel(id: string): string {
+    const group = this.groups.find((candidate) => candidate.id === id);
+    return group ? tournamentTeamLabel(group, this.players) : id;
   }
 
   private extractRounds(match: TournamentMatch, depth = 0): Round[] {
@@ -33,11 +44,13 @@ export class TournamentBracketComponent {
       rounds[currentDepth].matches.push(m);
 
       if (m.children && m.children.length > 0) {
-        m.children.forEach((child) => processMatch(child, currentDepth + 1));
+        m.children.forEach((child) => {
+          if (child) processMatch(child, currentDepth + 1);
+        });
       }
     };
 
     processMatch(match, depth);
-    return rounds;
+    return rounds.reverse();
   }
 }

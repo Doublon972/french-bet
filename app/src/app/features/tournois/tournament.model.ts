@@ -10,7 +10,7 @@ export interface TournamentMatch {
   participant1?: string;
   participant2?: string;
   winner?: string;
-  children?: TournamentMatch[];
+  children?: [TournamentMatch | null, TournamentMatch | null];
 }
 
 export interface Tournament {
