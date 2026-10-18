@@ -1,48 +1,57 @@
 <div class="tournament-bracket">
   <div class="bracket-container">
     @for (round of rounds; track round.name; let roundIndex = $index) {
-      <div class="round-column">
+      <div class="round-column" [class.first-round]="roundIndex === 0" [class.last-round]="roundIndex === rounds.length - 1">
         <div class="round-title">{{ round.name }}</div>
-        <div class="round-matches">
-          @for (match of round.matches; track match.id; let matchIndex = $index) {
+        <div
+          class="round-matches"
+          [style.height.px]="bracketHeight"
+          [style.grid-template-rows]="'repeat(' + (leafMatchCount * 2) + ', minmax(0, 1fr))'"
+        >
+          @for (layout of round.matches; track layout.match.id) {
             <div
-              class="match-card"
-              [class.final-match]="round.name === 'Finale'"
-              [class.selected]="selectedMatchId === match.id"
-              [class.disabled]="isMatchDisabled(match)"
-              (click)="onSelectMatch(match)"
+              class="match-slot"
+              [class.has-two-children]="roundIndex > 0 && layout.hasTwoChildren"
+              [style.grid-row]="layout.rowStart + ' / span ' + layout.rowSpan"
             >
-              <div class="match-connector-left"></div>
-              <div class="match-connector-right"></div>
+              <div
+                class="match-card"
+                [class.final-match]="layout.match.round === 'Finale'"
+                [class.selected]="selectedMatchId === layout.match.id"
+                [class.disabled]="isMatchDisabled(layout.match)"
+                (click)="onSelectMatch(layout.match)"
+              >
+                <div class="match-connector-right"></div>
 
-              <div class="match-content">
-                @if (match.participant1) {
-                  <div class="team-row" [class.winner]="match.winner === match.participant1">
-                    <span class="team-name">{{ participantLabel(match.participant1) }}</span>
-                    @if (match.winner === match.participant1) {
-                      <span class="winner-indicator">🏆</span>
-                    }
-                  </div>
-                } @else {
-                  <div class="team-row pending">
-                    <span class="team-name">En attente</span>
-                  </div>
-                }
+                <div class="match-content">
+                  @if (layout.match.participant1) {
+                    <div class="team-row" [class.winner]="layout.match.winner === layout.match.participant1">
+                      <span class="team-name">{{ participantLabel(layout.match.participant1) }}</span>
+                      @if (layout.match.winner === layout.match.participant1) {
+                        <span class="winner-indicator">🏆</span>
+                      }
+                    </div>
+                  } @else {
+                    <div class="team-row pending">
+                      <span class="team-name">En attente</span>
+                    </div>
+                  }
 
-                <div class="match-divider"></div>
+                  <div class="match-divider"></div>
 
-                @if (match.participant2) {
-                  <div class="team-row" [class.winner]="match.winner === match.participant2">
-                    <span class="team-name">{{ participantLabel(match.participant2) }}</span>
-                    @if (match.winner === match.participant2) {
-                      <span class="winner-indicator">🏆</span>
-                    }
-                  </div>
-                } @else {
-                  <div class="team-row pending">
-                    <span class="team-name">En attente</span>
-                  </div>
-                }
+                  @if (layout.match.participant2) {
+                    <div class="team-row" [class.winner]="layout.match.winner === layout.match.participant2">
+                      <span class="team-name">{{ participantLabel(layout.match.participant2) }}</span>
+                      @if (layout.match.winner === layout.match.participant2) {
+                        <span class="winner-indicator">🏆</span>
+                      }
+                    </div>
+                  } @else {
+                    <div class="team-row pending">
+                      <span class="team-name">En attente</span>
+                    </div>
+                  }
+                </div>
               </div>
             </div>
           }

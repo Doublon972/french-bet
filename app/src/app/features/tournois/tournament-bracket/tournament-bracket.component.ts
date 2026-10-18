@@ -5,7 +5,14 @@ import { tournamentTeamLabel } from '../tournament.util';
 
 interface Round {
   name: string;
-  matches: TournamentMatch[];
+  matches: MatchLayout[];
+}
+
+interface MatchLayout {
+  match: TournamentMatch;
+  rowStart: number;
+  rowSpan: number;
+  hasTwoChildren: boolean;
 }
 
 @Component({
@@ -22,6 +29,8 @@ export class TournamentBracketComponent implements OnChanges {
   @Output() matchSelect = new EventEmitter<TournamentMatch>();
 
   rounds: Round[] = [];
+  leafMatchCount = 0;
+  bracketHeight = 600;
 
   ngOnChanges(_changes: SimpleChanges): void {
     if (this.match) {
@@ -52,23 +61,35 @@ export class TournamentBracketComponent implements OnChanges {
     return group ? tournamentTeamLabel(group, this.players) : id;
   }
 
-  private extractRounds(match: TournamentMatch, depth = 0): Round[] {
-    const rounds: Round[] = [];
+  private extractRounds(root: TournamentMatch): Round[] {
+    const rounds = new Map<number, Round>();
+    let nextLeafIndex = 0;
 
-    const processMatch = (m: TournamentMatch, currentDepth: number): void => {
-      if (!rounds[currentDepth]) {
-        rounds[currentDepth] = { name: m.round, matches: [] };
-      }
-      if (!m.isBye) rounds[currentDepth].matches.push(m);
+    const visit = (match: TournamentMatch, depth: number): { start: number; count: number } => {
+      const children = match.children?.filter((child) => !!child) ?? [];
+      const childLayouts = children.map((child) => visit(child, depth + 1));
+      const start = childLayouts[0]?.start ?? nextLeafIndex++;
+      const leafCount = childLayouts.reduce((sum, child) => sum + child.count, 0) || 1;
 
-      if (m.children && m.children.length > 0) {
-        m.children.forEach((child) => {
-          if (child) processMatch(child, currentDepth + 1);
+      if (!match.isBye) {
+        const round = rounds.get(depth) ?? { name: match.round, matches: [] };
+        round.matches.push({
+          match,
+          rowStart: start * 2 + 1,
+          rowSpan: leafCount * 2,
+          hasTwoChildren: children.length === 2,
         });
+        rounds.set(depth, round);
       }
+
+      return { start, count: leafCount };
     };
 
-    processMatch(match, depth);
-    return rounds.reverse();
+    visit(root, 0);
+    this.leafMatchCount = nextLeafIndex;
+    this.bracketHeight = Math.max(600, this.leafMatchCount * 140);
+    return [...rounds.entries()]
+      .sort(([depthA], [depthB]) => depthB - depthA)
+      .map(([, round]) => round);
   }
 }

@@ -7,8 +7,8 @@
 .bracket-container {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 3rem;
   min-width: fit-content;
   position: relative;
@@ -18,6 +18,7 @@
   display: flex;
   flex-direction: column;
   min-width: 280px;
+  flex: 0 0 280px;
   position: relative;
 }
 
@@ -34,11 +35,36 @@
 }
 
 .round-matches {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 1.5rem;
-  flex: 1;
+  display: grid;
+  position: relative;
+  flex: none;
+}
+
+.match-slot {
+  grid-column: 1;
+  position: relative;
+  align-self: stretch;
+  min-height: 0;
+}
+
+.match-slot.has-two-children::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 25%;
+  bottom: 25%;
+  width: 2px;
+  background: #6366f1;
+}
+
+.match-slot.has-two-children::after {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  width: 1.5rem;
+  height: 2px;
+  background: #6366f1;
 }
 
 .match-card {
@@ -47,70 +73,31 @@
   border-radius: 0.75rem;
   padding: 1rem;
   min-height: 100px;
+  width: 100%;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
-  position: relative;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  z-index: 1;
   cursor: pointer;
 }
 
 /* Connectors */
-.match-connector-left {
-  position: absolute;
-  left: -3rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3rem;
-  height: 2px;
-  background: linear-gradient(90deg, #6366f1 0%, #475569 100%);
-}
-
 .match-connector-right {
   position: absolute;
-  right: -3rem;
+  right: -1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 3rem;
+  width: 1.5rem;
   height: 2px;
   background: linear-gradient(90deg, #475569 0%, #6366f1 100%);
 }
 
-.round-column:first-child .match-connector-left {
+.round-column.last-round .match-connector-right {
   display: none;
-}
-
-.round-column:last-child .match-connector-right {
-  display: none;
-}
-
-/* Vertical connectors for bracket tree */
-.round-column:not(:first-child) .match-card::before {
-  content: '';
-  position: absolute;
-  left: -3rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 0;
-  background: #6366f1;
-}
-
-.round-column:not(:first-child) .match-card:first-child::before {
-  height: 50%;
-  top: 50%;
-  bottom: auto;
-}
-
-.round-column:not(:first-child) .match-card:last-child::before {
-  height: 50%;
-  top: auto;
-  bottom: 50%;
-}
-
-.round-column:not(:first-child) .match-card:not(:first-child):not(:last-child)::before {
-  height: 100%;
-  top: 50%;
-  transform: translateY(-50%);
 }
 
 .match-content {
@@ -178,7 +165,7 @@
 .match-card:hover {
   border-color: #8b5cf6;
   box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  transform: scale(1.02);
+  transform: translateY(-50%) scale(1.02);
   z-index: 10;
 }
 
@@ -203,7 +190,7 @@
 }
 
 .match-card.disabled:hover {
-  transform: none;
+  transform: translateY(-50%);
   border-color: #334155;
   box-shadow: none;
 }
@@ -226,6 +213,7 @@
 
   .round-column {
     min-width: 220px;
+    flex-basis: 220px;
   }
 
   .match-card {
@@ -236,5 +224,19 @@
   .team-row {
     padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
+  }
+
+  .match-slot.has-two-children::before {
+    left: -0.75rem;
+  }
+
+  .match-slot.has-two-children::after {
+    left: -0.75rem;
+    width: 0.75rem;
+  }
+
+  .match-connector-right {
+    right: -0.75rem;
+    width: 0.75rem;
   }
 }
