@@ -69,7 +69,7 @@
                       (click)="selectTournament(tournament)"
                       class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition"
                     >
-                      Voir l'arbre
+                      {{ tournament.isDraft ? 'Modifier' : "Voir l'arbre" }}
                     </button>
                     <button
                       (click)="deleteTournament(tournament.id)"
