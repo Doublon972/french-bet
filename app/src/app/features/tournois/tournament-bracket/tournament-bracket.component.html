@@ -1,39 +1,49 @@
-<div class="bracket-wrapper">
-  <div class="bracket">
-    @for (round of rounds; track round.name) {
-      <div class="round">
-        <div class="round-header">{{ round.name }}</div>
-        <div class="matches">
-          @for (match of round.matches; track match.id) {
+<div class="tournament-bracket">
+  <div class="bracket-container">
+    @for (round of rounds; track round.name; let roundIndex = $index) {
+      <div class="round-column">
+        <div class="round-title">{{ round.name }}</div>
+        <div class="round-matches">
+          @for (match of round.matches; track match.id; let matchIndex = $index) {
             <div
-              class="match"
+              class="match-card"
               [class.final-match]="round.name === 'Finale'"
               [class.selected]="selectedMatchId === match.id"
               [class.disabled]="isMatchDisabled(match)"
               (click)="onSelectMatch(match)"
-              title="Cliquez pour lancer ce match"
             >
-              @if (match.participant1) {
-                <div class="participant" [class.winner]="match.winner === match.participant1">
-                  <span>{{ participantLabel(match.participant1) }}</span>
-                  @if (match.winner === match.participant1) {
-                    <span class="winner-badge">V</span>
-                  }
-                </div>
-              } @else {
-                <div class="participant pending">En attente</div>
-              }
+              <div class="match-connector-left"></div>
+              <div class="match-connector-right"></div>
 
-              @if (match.participant2) {
-                <div class="participant" [class.winner]="match.winner === match.participant2">
-                  <span>{{ participantLabel(match.participant2) }}</span>
-                  @if (match.winner === match.participant2) {
-                    <span class="winner-badge">V</span>
-                  }
-                </div>
-              } @else {
-                <div class="participant pending">En attente</div>
-              }
+              <div class="match-content">
+                @if (match.participant1) {
+                  <div class="team-row" [class.winner]="match.winner === match.participant1">
+                    <span class="team-name">{{ participantLabel(match.participant1) }}</span>
+                    @if (match.winner === match.participant1) {
+                      <span class="winner-indicator">🏆</span>
+                    }
+                  </div>
+                } @else {
+                  <div class="team-row pending">
+                    <span class="team-name">En attente</span>
+                  </div>
+                }
+
+                <div class="match-divider"></div>
+
+                @if (match.participant2) {
+                  <div class="team-row" [class.winner]="match.winner === match.participant2">
+                    <span class="team-name">{{ participantLabel(match.participant2) }}</span>
+                    @if (match.winner === match.participant2) {
+                      <span class="winner-indicator">🏆</span>
+                    }
+                  </div>
+                } @else {
+                  <div class="team-row pending">
+                    <span class="team-name">En attente</span>
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>

@@ -1,114 +1,188 @@
-.bracket-wrapper {
+.tournament-bracket {
   overflow-x: auto;
   padding: 2rem;
   min-height: 600px;
 }
 
-.bracket {
+.bracket-container {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 4rem;
+  gap: 3rem;
   min-width: fit-content;
   position: relative;
 }
 
-.round {
+.round-column {
   display: flex;
   flex-direction: column;
-  min-width: 220px;
+  min-width: 280px;
   position: relative;
 }
 
-.round-header {
+.round-title {
   text-align: center;
   font-weight: bold;
   color: #a78bfa;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   text-transform: uppercase;
   font-size: 0.875rem;
   letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #6366f1;
 }
 
-.matches {
+.round-matches {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 2rem;
+  gap: 1.5rem;
   flex: 1;
 }
 
-.match {
+.match-card {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border: 2px solid #334155;
   border-radius: 0.75rem;
   padding: 1rem;
-  min-height: 90px;
+  min-height: 100px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem;
+  align-items: center;
   transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
 }
 
-/* Ligne de connexion vers le match suivant */
-.match::after {
-  content: '';
+/* Connectors */
+.match-connector-left {
   position: absolute;
-  right: -4rem;
+  left: -3rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 4rem;
+  width: 3rem;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1 0%, #475569 100%);
+}
+
+.match-connector-right {
+  position: absolute;
+  right: -3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
   height: 2px;
   background: linear-gradient(90deg, #475569 0%, #6366f1 100%);
 }
 
-.round:last-child .match::after {
+.round-column:first-child .match-connector-left {
   display: none;
 }
 
-/* Lignes verticales pour connecter les matchs */
-.match::before {
+.round-column:last-child .match-connector-right {
+  display: none;
+}
+
+/* Vertical connectors for bracket tree */
+.round-column:not(:first-child) .match-card::before {
   content: '';
   position: absolute;
-  right: -4rem;
+  left: -3rem;
   top: 50%;
   transform: translateY(-50%);
   width: 2px;
   height: 0;
   background: #6366f1;
-  transition: height 0.3s ease;
 }
 
-.round:not(:last-child) .match:first-child::before {
-  height: 1rem;
-  top: auto;
-  bottom: 50%;
-}
-
-.round:not(:last-child) .match:last-child::before {
-  height: 1rem;
+.round-column:not(:first-child) .match-card:first-child::before {
+  height: 50%;
   top: 50%;
   bottom: auto;
 }
 
-.round:not(:last-child) .match:not(:first-child):not(:last-child)::before {
-  height: 2rem;
+.round-column:not(:first-child) .match-card:last-child::before {
+  height: 50%;
+  top: auto;
+  bottom: 50%;
+}
+
+.round-column:not(:first-child) .match-card:not(:first-child):not(:last-child)::before {
+  height: 100%;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.match:hover {
+.match-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.team-row {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  transition: all 0.3s ease;
+}
+
+.team-row.winner {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border: 2px solid #10b981;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.team-row.pending {
+  background: #0f172a;
+  color: #64748b;
+  font-style: italic;
+  border: 1px dashed #334155;
+}
+
+.team-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.winner-indicator {
+  font-size: 1rem;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.match-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #475569 50%, transparent 100%);
+  margin: 0.25rem 0;
+}
+
+.match-card:hover {
   border-color: #8b5cf6;
   box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  transform: scale(1.05);
+  transform: scale(1.02);
   z-index: 10;
 }
 
-.match.selected {
+.match-card.selected {
   border-color: #fbbf24;
   box-shadow: 0 0 30px rgba(251, 191, 36, 0.6);
   animation: pulse-gold 2s infinite;
@@ -123,69 +197,44 @@
   }
 }
 
-.match.disabled {
+.match-card.disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.match.disabled:hover {
+.match-card.disabled:hover {
   transform: none;
   border-color: #334155;
   box-shadow: none;
 }
 
-.participant {
-  padding: 0.6rem 0.8rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  color: #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  background: #0f172a;
-  border: 1px solid #1e293b;
-}
-
-.participant.winner {
-  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
-  border: 2px solid #10b981;
-  font-weight: bold;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-}
-
-.participant.pending {
-  background: #0f172a;
-  color: #64748b;
-  font-style: italic;
-}
-
-.winner-badge {
-  background: #10b981;
-  color: white;
-  padding: 0.2rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.625rem;
-  font-weight: bold;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-}
-
-.round-label {
-  text-align: center;
-  color: #64748b;
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.final-match {
+.match-card.final-match {
   border-color: #fbbf24;
   box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
 }
 
-.final-match .participant.winner {
+.match-card.final-match .team-row.winner {
   background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
   border-color: #fbbf24;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .bracket-container {
+    gap: 1.5rem;
+  }
+
+  .round-column {
+    min-width: 220px;
+  }
+
+  .match-card {
+    min-height: 90px;
+    padding: 0.75rem;
+  }
+
+  .team-row {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
 }

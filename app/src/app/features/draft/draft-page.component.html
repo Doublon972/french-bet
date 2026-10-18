@@ -14,18 +14,20 @@
         <app-roster-form (addPlayer)="addPlayer($event)" />
       }
 
-      <a
-        routerLink="/tournois"
-        class="block bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/30 hover:border-purple-400 px-6 py-4 rounded-xl text-white font-bold transition shadow-lg cursor-pointer flex items-center justify-center gap-3 group"
-      >
-        <svg class="w-6 h-6 text-purple-400 group-hover:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-        </svg>
-        Tournois
-        <svg class="w-4 h-4 text-slate-500 group-hover:text-purple-300 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </a>
+      @if (isAdmin()) {
+        <a
+          routerLink="/tournois"
+          class="block bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/30 hover:border-purple-400 px-6 py-4 rounded-xl text-white font-bold transition shadow-lg cursor-pointer flex items-center justify-center gap-3 group"
+        >
+          <svg class="w-6 h-6 text-purple-400 group-hover:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+          </svg>
+          Tournois
+          <svg class="w-4 h-4 text-slate-500 group-hover:text-purple-300 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
+      }
 
       <app-leaderboard-card [players]="players()" [isAdmin]="isAdmin()" (editPlayer)="editPlayer($event)" />
 

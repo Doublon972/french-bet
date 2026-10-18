@@ -1,34 +1,21 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, Signal, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Database, push, ref, remove, set, update } from 'firebase/database';
+import { FIREBASE_DATABASE } from '../../core/firebase.providers';
 import { Tournament, TournamentGroup, TournamentMatch } from './tournament.model';
+import { listValue$ } from '../../core/utils/rtdb.util';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TournamentService {
-  private readonly STORAGE_KEY = 'tournaments';
-  readonly tournaments = signal<Tournament[]>([]);
+  private readonly db: Database = inject(FIREBASE_DATABASE);
+  readonly tournaments: Signal<Tournament[] | undefined> = toSignal(
+    listValue$<Omit<Tournament, 'id'>>(this.db, 'tournaments')
+  );
   readonly currentTournament = signal<Tournament | null>(null);
 
-  constructor() {
-    this.loadTournaments();
-  }
-
-  private loadTournaments(): void {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (stored) {
-      try {
-        this.tournaments.set(JSON.parse(stored));
-      } catch (e) {
-        console.error('Erreur lors du chargement des tournois', e);
-      }
-    }
-  }
-
-  private saveTournaments(): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.tournaments()));
-  }
-
-  createTournament(name: string, groups: TournamentGroup[]): Tournament {
+  async createTournament(name: string, groups: TournamentGroup[]): Promise<Tournament> {
     const validGroups = groups.map((group) => ({
       ...group,
       participants: [...group.participants],
@@ -41,9 +28,8 @@ export class TournamentService {
       createdAt: Date.now(),
     };
 
-    const updated = [...this.tournaments(), tournament];
-    this.tournaments.set(updated);
-    this.saveTournaments();
+    const { id, ...tournamentData } = tournament;
+    await set(ref(this.db, `tournaments/${id}`), tournamentData);
     this.currentTournament.set(tournament);
 
     return tournament;
@@ -141,17 +127,15 @@ export class TournamentService {
     this.currentTournament.set(tournament);
   }
 
-  deleteTournament(tournamentId: string): void {
-    const updated = this.tournaments().filter((t) => t.id !== tournamentId);
-    this.tournaments.set(updated);
-    this.saveTournaments();
+  async deleteTournament(tournamentId: string): Promise<void> {
+    await remove(ref(this.db, `tournaments/${tournamentId}`));
     if (this.currentTournament()?.id === tournamentId) {
       this.currentTournament.set(null);
     }
   }
 
-  updateMatchWinner(tournamentId: string, matchId: string, winner: string): void {
-    const tournament = this.tournaments().find((candidate) => candidate.id === tournamentId);
+  async updateMatchWinner(tournamentId: string, matchId: string, winner: string): Promise<void> {
+    const tournament = this.tournaments()?.find((candidate) => candidate.id === tournamentId);
     if (!tournament || !tournament.bracket) return;
 
     let changed = false;
@@ -180,12 +164,10 @@ export class TournamentService {
     const bracket = updateMatch(tournament.bracket);
     if (!changed) return;
 
-    const updatedTournament = { ...tournament, bracket };
-    const updated = this.tournaments().map((t) => (t.id === tournament.id ? updatedTournament : t));
-    this.tournaments.set(updated);
-    this.saveTournaments();
+    const { id, ...tournamentData } = { ...tournament, bracket };
+    await update(ref(this.db, `tournaments/${id}`), tournamentData);
     if (this.currentTournament()?.id === tournament.id) {
-      this.currentTournament.set(updatedTournament);
+      this.currentTournament.set({ ...tournament, bracket });
     }
   }
 }

@@ -35,7 +35,7 @@ export class TournoisPageComponent {
   private readonly settingsService = inject(SettingsService);
   private readonly authService = inject(AuthService);
 
-  readonly tournaments = this.tournamentService.tournaments;
+  readonly tournaments = computed(() => this.tournamentService.tournaments() ?? []);
   readonly currentTournament = this.tournamentService.currentTournament;
   readonly players = computed<Player[]>(() => this.playersService.players() ?? []);
   readonly isAdmin = this.authService.isAdmin;
@@ -194,7 +194,7 @@ export class TournoisPageComponent {
     );
   }
 
-  createTournament(): void {
+  async createTournament(): Promise<void> {
     const name = this.tournamentName().trim();
     if (!name) {
       alert('Veuillez entrer un nom pour le tournoi');
@@ -218,7 +218,7 @@ export class TournoisPageComponent {
       return;
     }
 
-    this.tournamentService.createTournament(name, groups);
+    await this.tournamentService.createTournament(name, groups);
     this.currentView.set('bracket');
   }
 
@@ -371,7 +371,11 @@ export class TournoisPageComponent {
 
   async startTournamentMatch(match: TournamentMatch): Promise<void> {
     const tournament = this.currentTournament();
-    if (!this.isAdmin() || !tournament || match.id !== this.currentTournamentMatch()?.id) return;
+    if (!this.isAdmin() || !tournament) return;
+    if (!match.participant1 || !match.participant2) {
+      alert('Les deux équipes doivent être définies pour lancer ce combat.');
+      return;
+    }
     const activeMatch = this.activeMatch();
     if (activeMatch === undefined) {
       alert('Le match en cours est encore en chargement. Réessayez dans un instant.');
@@ -385,7 +389,6 @@ export class TournoisPageComponent {
       );
       return;
     }
-    if (!match.participant1 || !match.participant2) return;
 
     const teamA = this.getTeamPlayers(tournament, match.participant1);
     const teamB = this.getTeamPlayers(tournament, match.participant2);

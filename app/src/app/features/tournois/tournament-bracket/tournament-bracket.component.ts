@@ -38,12 +38,9 @@ export class TournamentBracketComponent implements OnChanges {
   }
 
   canLaunchMatch(match: TournamentMatch): boolean {
-    // Un match peut être lancé si tous ses enfants ont un gagnant
-    if (!match.children || match.children.length === 0) {
-      return true; // Premier tour, peut être lancé
-    }
-
-    return match.children.every((child) => child.winner !== undefined);
+    // Un match peut être lancé si les deux participants sont définis
+    // et le match n'a pas déjà de gagnant
+    return !!match.participant1 && !!match.participant2 && !match.winner;
   }
 
   isMatchDisabled(match: TournamentMatch): boolean {
