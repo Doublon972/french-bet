@@ -237,39 +237,75 @@ export class TournamentService {
   }
 
   async updateMatchWinner(tournamentId: string, matchId: string, winner: string): Promise<void> {
-    const tournament = this.tournaments()?.find((candidate) => candidate.id === tournamentId);
-    if (!tournament || !tournament.bracket) return;
+    const bracketRef = ref(this.db, `tournaments/${tournamentId}/bracket`);
+    const result = await runTransaction(bracketRef, (current) => {
+      if (!this.isTournamentMatch(current)) return;
+      let found = false;
+      let changed = false;
 
-    let changed = false;
-    const updateMatch = (match: TournamentMatch): TournamentMatch => {
-      if (match.id === matchId) {
-        if (match.isBye || match.winner || ![match.participant1, match.participant2].includes(winner)) {
-          return match;
+      const updateMatch = (match: TournamentMatch): TournamentMatch => {
+        if (match.id === matchId) {
+          found = true;
+          if (
+            match.isBye ||
+            match.winner ||
+            ![match.participant1, match.participant2].includes(winner)
+          ) {
+            return match;
+          }
+          changed = true;
+          return { ...match, winner };
         }
-        changed = true;
-        return { ...match, winner };
-      }
-      if (match.children) {
+
+        if (!match.children) return match;
         const children = match.children.map(updateMatch);
-        if (children.some((child, index) => child !== match.children![index])) {
-          return {
-            ...match,
-            children,
-            participant1: children[0]?.winner,
-            participant2: children[1]?.winner,
-          };
-        }
+        if (!children.some((child, index) => child !== match.children![index])) return match;
+
+        return {
+          ...match,
+          children,
+          participant1: children[0]?.winner ?? null,
+          participant2: children[1]?.winner ?? null,
+        };
+      };
+
+      const bracket = updateMatch(current);
+      return found && changed ? bracket : undefined;
+    });
+
+    if (!result.committed) {
+      const currentBracket = result.snapshot.val();
+      if (!this.isTournamentMatch(currentBracket)) {
+        throw new Error(`Tournament ${tournamentId} has no valid bracket.`);
       }
-      return match;
-    };
+      const findMatch = (match: TournamentMatch | null): TournamentMatch | null => {
+        if (!match) return null;
+        if (match.id === matchId) return match;
+        for (const child of match.children ?? []) {
+          const found = findMatch(child);
+          if (found) return found;
+        }
+        return null;
+      };
+      if (findMatch(currentBracket)?.winner === winner) return;
+      throw new Error(`Could not record winner ${winner} for tournament match ${matchId}.`);
+    }
 
-    const bracket = updateMatch(tournament.bracket);
-    if (!changed) return;
-
-    const { id, ...tournamentData } = { ...tournament, bracket };
-    await update(ref(this.db, `tournaments/${id}`), tournamentData);
-    if (this.currentTournament()?.id === tournament.id) {
+    const tournament = this.currentTournament();
+    const bracket = result.snapshot.val();
+    if (tournament?.id === tournamentId && this.isTournamentMatch(bracket)) {
       this.currentTournament.set({ ...tournament, bracket });
     }
+  }
+
+  private isTournamentMatch(value: unknown): value is TournamentMatch {
+    return (
+      !!value &&
+      typeof value === 'object' &&
+      'id' in value &&
+      typeof value.id === 'string' &&
+      'round' in value &&
+      typeof value.round === 'string'
+    );
   }
 }

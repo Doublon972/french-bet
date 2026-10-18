@@ -551,15 +551,16 @@ export class TournoisPageComponent implements OnInit {
     });
   }
 
-  resolveTournamentMatch(winner: TeamSide): void {
+  async resolveTournamentMatch(winner: TeamSide): Promise<void> {
     const match = this.activeTournamentMatch();
     if (!match) return;
-    this.matchService
-      .resolveMatch(match, winner, this.settingsService.settings())
-      .catch((error) => {
-        console.error('Erreur lors de la résolution du combat du tournoi', error);
-        alert('Impossible d’enregistrer le résultat du combat. Vérifiez votre connexion et réessayez.');
-      });
+    try {
+      await this.matchService.resolveMatch(match, winner, this.settingsService.settings());
+      this.selectedTournamentMatch.set(null);
+    } catch (error) {
+      console.error('Erreur lors de la résolution du combat du tournoi', error);
+      alert('Impossible d’enregistrer le résultat du combat. Vérifiez votre connexion et réessayez.');
+    }
   }
 
   cancelTournamentMatch(): void {

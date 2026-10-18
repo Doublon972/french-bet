@@ -113,6 +113,20 @@ export class MatchService {
       updates[`players/${p.id}/losses`] = winner === 'A' ? p.losses + 1 : p.losses;
     }
 
+    if (
+      activeMatch.tournamentId &&
+      activeMatch.tournamentMatchId &&
+      activeMatch.tournamentParticipantA &&
+      activeMatch.tournamentParticipantB
+    ) {
+      const tournamentWinner = winner === 'A' ? activeMatch.tournamentParticipantA : activeMatch.tournamentParticipantB;
+      await this.tournamentService.updateMatchWinner(
+        activeMatch.tournamentId,
+        activeMatch.tournamentMatchId,
+        tournamentWinner,
+      );
+    }
+
     const historyEntry: Omit<HistoryEntry, 'id'> = {
       timestamp: Date.now(),
       teamA_names: activeMatch.teamA.map((p) => p.name).join(', '),
@@ -137,19 +151,5 @@ export class MatchService {
     updates['activeMatch'] = null;
 
     await update(ref(this.db), updates);
-
-    if (
-      activeMatch.tournamentId &&
-      activeMatch.tournamentMatchId &&
-      activeMatch.tournamentParticipantA &&
-      activeMatch.tournamentParticipantB
-    ) {
-      const tournamentWinner = winner === 'A' ? activeMatch.tournamentParticipantA : activeMatch.tournamentParticipantB;
-      this.tournamentService.updateMatchWinner(
-        activeMatch.tournamentId,
-        activeMatch.tournamentMatchId,
-        tournamentWinner,
-      );
-    }
   }
 }
