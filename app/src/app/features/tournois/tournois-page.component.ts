@@ -112,23 +112,6 @@ export class TournoisPageComponent implements OnInit {
     }
   }
 
-  startParticipantsForm(): void {
-    const name = this.tournamentName().trim();
-    if (!name) {
-      alert('Veuillez entrer un nom pour le tournoi');
-      return;
-    }
-
-    const teamSize = Number(this.participantsPerGroup());
-    if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 20) {
-      alert('Le nombre de combattants par équipe doit être compris entre 1 et 20.');
-      return;
-    }
-
-    this.groups.set([this.createGroup(0, teamSize), this.createGroup(1, teamSize)]);
-    this.currentView.set('participants');
-  }
-
   private createGroup(index: number, teamSize: number): TournamentGroup {
     return {
       id: `group-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
@@ -249,8 +232,6 @@ export class TournoisPageComponent implements OnInit {
       return;
     }
 
-    await this.tournamentService.createTournament(name, groups);
-    this.currentView.set('bracket');
   }
 
   async finalizeTournament(): Promise<void> {

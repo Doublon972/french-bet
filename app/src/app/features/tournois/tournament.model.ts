@@ -7,8 +7,8 @@ export interface TournamentGroup {
 export interface TournamentMatch {
   id: string;
   round: string;
-  participant1?: string;
-  participant2?: string;
+  participant1?: string | null;
+  participant2?: string | null;
   winner?: string;
   isBye?: boolean;
   children?: TournamentMatch[];
