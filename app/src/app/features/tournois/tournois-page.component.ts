@@ -90,6 +90,9 @@ export class TournoisPageComponent implements OnInit {
         if (JSON.stringify(untracked(() => this.groups())) !== JSON.stringify(latest.groups)) {
           this.groups.set(this.copyGroups(latest.groups));
         }
+        if (selected.isDraft && !latest.isDraft) {
+          this.currentView.set('bracket');
+        }
       }
 
       if (JSON.stringify(selected) !== JSON.stringify(latest)) {
@@ -410,6 +413,12 @@ export class TournoisPageComponent implements OnInit {
     const history = this.tournamentMatchHistory(tournament, match);
     if (history) return side === 'A' ? history.teamA_names : history.teamB_names;
     return this.teamLabel(tournament, side === 'A' ? match.participant1 : match.participant2);
+  }
+
+  tournamentMatchSideName(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string {
+    const participantId = side === 'A' ? match.participant1 : match.participant2;
+    const groupName = tournament.groups.find((group) => group.id === participantId)?.name?.trim();
+    return groupName || (side === 'A' ? 'Équipe bleue' : 'Équipe rouge');
   }
 
   tournamentMatchOdds(tournament: Tournament, match: TournamentMatch, side: 'A' | 'B'): string | null {
