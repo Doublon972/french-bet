@@ -21,7 +21,9 @@
                 [class.disabled]="isMatchDisabled(layout.match)"
                 (click)="onSelectMatch(layout.match)"
               >
-                <div class="match-connector-right"></div>
+                @if (layout.hasVisibleParent) {
+                  <div class="match-connector-right"></div>
+                }
 
                 <div class="match-content">
                   @if (layout.match.participant1) {

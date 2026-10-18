@@ -13,6 +13,7 @@ interface MatchLayout {
   rowStart: number;
   rowSpan: number;
   hasTwoChildren: boolean;
+  hasVisibleParent: boolean;
 }
 
 @Component({
@@ -65,22 +66,29 @@ export class TournamentBracketComponent implements OnChanges {
     const rounds = new Map<number, Round>();
     let nextLeafIndex = 0;
 
-    const visit = (match: TournamentMatch, depth: number): { start: number; count: number } => {
+    const visit = (
+      match: TournamentMatch,
+      depth: number,
+      hasVisibleParent = false,
+    ): { start: number; count: number } | null => {
+      if (match.isBye) return null;
+
       const children = match.children?.filter((child) => !!child) ?? [];
-      const childLayouts = children.map((child) => visit(child, depth + 1));
+      const childLayouts = children
+        .map((child) => visit(child, depth + 1, true))
+        .filter((layout): layout is { start: number; count: number } => layout !== null);
       const start = childLayouts[0]?.start ?? nextLeafIndex++;
       const leafCount = childLayouts.reduce((sum, child) => sum + child.count, 0) || 1;
 
-      if (!match.isBye) {
-        const round = rounds.get(depth) ?? { name: match.round, matches: [] };
-        round.matches.push({
-          match,
-          rowStart: start * 2 + 1,
-          rowSpan: leafCount * 2,
-          hasTwoChildren: children.length === 2,
-        });
-        rounds.set(depth, round);
-      }
+      const round = rounds.get(depth) ?? { name: match.round, matches: [] };
+      round.matches.push({
+        match,
+        rowStart: start * 2 + 1,
+        rowSpan: leafCount * 2,
+        hasTwoChildren: childLayouts.length === 2,
+        hasVisibleParent,
+      });
+      rounds.set(depth, round);
 
       return { start, count: leafCount };
     };
