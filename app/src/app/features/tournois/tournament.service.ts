@@ -1,6 +1,7 @@
 import { Injectable, Signal, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Database, push, ref, remove, set, update } from 'firebase/database';
+import { Database, ref, remove, runTransaction, set, update } from 'firebase/database';
+import { map } from 'rxjs';
 import { FIREBASE_DATABASE } from '../../core/firebase.providers';
 import { Tournament, TournamentGroup, TournamentMatch } from './tournament.model';
 import { listValue$ } from '../../core/utils/rtdb.util';
@@ -11,15 +12,26 @@ import { listValue$ } from '../../core/utils/rtdb.util';
 export class TournamentService {
   private readonly db: Database = inject(FIREBASE_DATABASE);
   readonly tournaments: Signal<Tournament[] | undefined> = toSignal(
-    listValue$<Omit<Tournament, 'id'>>(this.db, 'tournaments')
+    listValue$<Omit<Tournament, 'id'>>(this.db, 'tournaments').pipe(
+      map((tournaments) =>
+        tournaments.map((tournament) => ({
+          ...tournament,
+          groups: this.normalizeGroups(tournament.groups),
+        })),
+      ),
+    ),
   );
   readonly currentTournament = signal<Tournament | null>(null);
 
-  async createTournament(name: string, participantsPerGroup: number): Promise<Tournament> {
+  async createTournament(
+    name: string,
+    participantsPerGroup: number,
+    groups: TournamentGroup[],
+  ): Promise<Tournament> {
     const tournament: Tournament = {
       id: Date.now().toString(),
       name,
-      groups: [],
+      groups: groups.map((group) => ({ ...group, participants: [...group.participants] })),
       bracket: null,
       createdAt: Date.now(),
       participantsPerGroup,
@@ -54,12 +66,75 @@ export class TournamentService {
     }
   }
 
-  async updateTournamentGroups(tournamentId: string, groups: TournamentGroup[]): Promise<void> {
-    const validGroups = groups.map((group) => ({
-      ...group,
-      participants: [...group.participants],
-    }));
-    await set(ref(this.db, `tournaments/${tournamentId}/groups`), validGroups);
+  async addTournamentGroups(tournamentId: string, groupsToAdd: TournamentGroup[]): Promise<void> {
+    const groupsRef = ref(this.db, `tournaments/${tournamentId}/groups`);
+    const result = await runTransaction(groupsRef, (current) => {
+      const groups = this.normalizeGroups(current);
+      const existingIds = new Set(groups.map((group) => group.id));
+      return [
+        ...groups,
+        ...groupsToAdd
+          .filter((group) => !existingIds.has(group.id))
+          .map((group) => ({ ...group, participants: [...group.participants] })),
+      ];
+    });
+    if (!result.committed) throw new Error(`Could not add groups to tournament ${tournamentId}.`);
+    this.updateCurrentTournamentGroups(tournamentId, this.normalizeGroups(result.snapshot.val()));
+  }
+
+  async removeTournamentGroup(tournamentId: string, groupId: string): Promise<void> {
+    const groupsRef = ref(this.db, `tournaments/${tournamentId}/groups`);
+    const result = await runTransaction(groupsRef, (current) =>
+      this.normalizeGroups(current).filter((group) => group.id !== groupId),
+    );
+    if (!result.committed) throw new Error(`Could not remove group ${groupId} from tournament ${tournamentId}.`);
+    this.updateCurrentTournamentGroups(tournamentId, this.normalizeGroups(result.snapshot.val()));
+  }
+
+  async updateTournamentGroupName(tournamentId: string, groupId: string, name: string): Promise<void> {
+    const groupIndex = this.getGroupIndex(tournamentId, groupId);
+    await update(ref(this.db), { [`tournaments/${tournamentId}/groups/${groupIndex}/name`]: name });
+  }
+
+  async updateTournamentParticipant(
+    tournamentId: string,
+    groupId: string,
+    participantIndex: number,
+    participantId: string,
+  ): Promise<void> {
+    const groupIndex = this.getGroupIndex(tournamentId, groupId);
+    await update(ref(this.db), {
+      [`tournaments/${tournamentId}/groups/${groupIndex}/participants/${participantIndex}`]: participantId,
+    });
+  }
+
+  private getGroupIndex(tournamentId: string, groupId: string): number {
+    const latest = this.tournaments()?.find((candidate) => candidate.id === tournamentId);
+    const current = this.currentTournament()?.id === tournamentId ? this.currentTournament() : null;
+    const latestIndex = latest?.groups.findIndex((group) => group.id === groupId) ?? -1;
+    const currentIndex = current?.groups.findIndex((group) => group.id === groupId) ?? -1;
+    const groupIndex = latestIndex >= 0 ? latestIndex : currentIndex;
+    if (groupIndex < 0) throw new Error(`Group ${groupId} was not found in tournament ${tournamentId}.`);
+    return groupIndex;
+  }
+
+  private updateCurrentTournamentGroups(tournamentId: string, groups: TournamentGroup[]): void {
+    const tournament = this.currentTournament();
+    if (tournament?.id === tournamentId) this.currentTournament.set({ ...tournament, groups });
+  }
+
+  private normalizeGroups(groups: unknown): TournamentGroup[] {
+    const entries = Array.isArray(groups)
+      ? groups
+      : groups && typeof groups === 'object'
+        ? Object.values(groups)
+        : [];
+    return entries.filter((group): group is TournamentGroup =>
+      !!group &&
+      typeof group === 'object' &&
+      typeof (group as TournamentGroup).id === 'string' &&
+      Array.isArray((group as TournamentGroup).participants),
+    );
   }
 
   private generateBracket(groups: TournamentGroup[]): TournamentMatch | null {
