@@ -1,6 +1,4 @@
 import { Routes } from '@angular/router';
-import { inject } from '@angular/core';
-import { AuthService } from './app/core/services/auth.service';
 
 export const routes: Routes = [
   {
@@ -28,12 +26,11 @@ export const routes: Routes = [
     path: 'tournois',
     title: 'LaFrench - Tournois',
     loadComponent: () => import('./features/tournois/tournois-page.component').then((m) => m.TournoisPageComponent),
-    canActivate: [() => inject(AuthService).isAdmin()],
   },
   {
     path: 'overlay',
     title: 'LaFrench - Overlay Stream',
-    loadComponent: () => import('./features/overlay/overlay-page.component').then((m) m.OverlayPageComponent),
+    loadComponent: () => import('./features/overlay/overlay-page.component').then((m) => m.OverlayPageComponent),
   },
   { path: '**', redirectTo: '' },
 ];

@@ -1,6 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { HistoryService } from '../../core/services/history.service';
 import { MatchService } from '../../core/services/match.service';
@@ -27,13 +27,20 @@ interface MatchRound {
   imports: [FormsModule, RouterLink, TournamentBracketComponent, ActiveMatchPanelComponent, MatchDetailModalComponent],
   templateUrl: './tournois-page.component.html',
 })
-export class TournoisPageComponent {
+export class TournoisPageComponent implements OnInit {
   private readonly tournamentService = inject(TournamentService);
   private readonly historyService = inject(HistoryService);
   private readonly matchService = inject(MatchService);
   private readonly playersService = inject(PlayersService);
   private readonly settingsService = inject(SettingsService);
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
+  ngOnInit(): void {
+    if (!this.authService.isAdmin()) {
+      this.router.navigate(['/']);
+    }
+  }
 
   readonly tournaments = computed(() => this.tournamentService.tournaments() ?? []);
   readonly currentTournament = this.tournamentService.currentTournament;
