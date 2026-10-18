@@ -73,7 +73,7 @@ export class TournoisPageComponent implements OnInit {
   readonly tournamentName = signal('');
   readonly participantsPerGroup = signal(2);
   readonly groups = signal<TournamentGroup[]>([]);
-  readonly currentView = signal<'list' | 'create' | 'participants' | 'bracket'>('list');
+  readonly currentView = signal<'list' | 'create' | 'edit' | 'participants' | 'bracket'>('list');
   readonly activeParticipantField = signal<string | null>(null);
   readonly participantSearch = signal<Record<string, string>>({});
 
@@ -86,6 +86,30 @@ export class TournoisPageComponent implements OnInit {
     this.showCreateForm.set(true);
     this.tournamentName.set('');
     this.participantsPerGroup.set(2);
+  }
+
+  async createTournament(): Promise<void> {
+    const name = this.tournamentName().trim();
+    if (!name) {
+      alert('Veuillez entrer un nom pour le tournoi');
+      return;
+    }
+
+    const teamSize = Number(this.participantsPerGroup());
+    if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 20) {
+      alert('Le nombre de combattants par équipe doit être compris entre 1 et 20.');
+      return;
+    }
+
+    try {
+      const tournament = await this.tournamentService.createTournament(name, teamSize);
+      this.tournamentService.selectTournament(tournament);
+      this.groups.set([this.createGroup(0, teamSize), this.createGroup(1, teamSize)]);
+      this.currentView.set('edit');
+    } catch (error) {
+      console.error('Erreur lors de la création du tournoi', error);
+      alert('Impossible de créer le tournoi. Vérifiez votre connexion et réessayez.');
+    }
   }
 
   startParticipantsForm(): void {
@@ -229,9 +253,61 @@ export class TournoisPageComponent implements OnInit {
     this.currentView.set('bracket');
   }
 
+  async finalizeTournament(): Promise<void> {
+    const tournament = this.currentTournament();
+    if (!tournament) return;
+
+    const groups = this.groups();
+    const allParticipants = groups.flatMap((group) => group.participants);
+    if (groups.length < 2 || allParticipants.some((id) => !id)) {
+      alert('Sélectionnez un combattant enregistré pour chaque place de chaque équipe.');
+      return;
+    }
+
+    const uniqueParticipants = new Set(allParticipants);
+    if (uniqueParticipants.size !== allParticipants.length) {
+      alert('Un combattant ne peut être sélectionné qu\'une seule fois dans le tournoi.');
+      return;
+    }
+    if (allParticipants.some((id) => !this.players().some((player) => player.id === id))) {
+      alert('Un combattant sélectionné n\'existe plus dans la base de données. Veuillez le sélectionner à nouveau.');
+      return;
+    }
+
+    try {
+      await this.tournamentService.finalizeTournament(tournament.id, groups);
+      this.currentView.set('bracket');
+    } catch (error) {
+      console.error('Erreur lors de la finalisation du tournoi', error);
+      alert('Impossible de finaliser le tournoi. Vérifiez votre connexion et réessayez.');
+    }
+  }
+
+  async saveGroups(): Promise<void> {
+    const tournament = this.currentTournament();
+    if (!tournament) return;
+
+    try {
+      await this.tournamentService.updateTournamentGroups(tournament.id, this.groups());
+      alert('Groupes sauvegardés avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des groupes', error);
+      alert('Impossible de sauvegarder les groupes. Vérifiez votre connexion et réessayez.');
+    }
+  }
+
   selectTournament(tournament: Tournament): void {
     this.tournamentService.selectTournament(tournament);
-    this.currentView.set('bracket');
+    if (tournament.isDraft) {
+      this.participantsPerGroup.set(tournament.participantsPerGroup);
+      this.groups.set(tournament.groups.length > 0 ? tournament.groups : [
+        this.createGroup(0, tournament.participantsPerGroup),
+        this.createGroup(1, tournament.participantsPerGroup)
+      ]);
+      this.currentView.set('edit');
+    } else {
+      this.currentView.set('bracket');
+    }
   }
 
   async deleteTournament(tournamentId: string): Promise<void> {

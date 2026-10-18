@@ -55,6 +55,9 @@
               >
                 <h3 class="text-xl font-bold text-white mb-2">{{ tournament.name }}</h3>
                 <p class="text-slate-400 text-sm mb-4">
+                  @if (tournament.isDraft) {
+                    <span class="text-amber-400 font-bold">En préparation</span> •
+                  }
                   {{ tournament.groups.length }} groupe(s) • {{ tournament.groups.flatMap(g => g.participants).length }} participant(s)
                 </p>
                 <div class="flex justify-between items-center gap-3">
@@ -120,21 +123,24 @@
               Annuler
             </button>
             <button
-              (click)="startParticipantsForm()"
+              (click)="createTournament()"
               class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition"
             >
-              Suivant
+              Créer le tournoi
             </button>
           </div>
         </div>
       </div>
     }
 
-    <!-- Formulaire des participants -->
-    @if (currentView() === 'participants') {
+    <!-- Formulaire d'édition (draft) -->
+    @if (currentView() === 'edit') {
       <div class="max-w-4xl mx-auto bg-slate-800 border border-slate-700 rounded-xl p-8 shadow-2xl">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-white">Participants</h2>
+          <div>
+            <h2 class="text-2xl font-bold text-white">{{ currentTournament()!.name }}</h2>
+            <p class="text-amber-400 text-sm font-bold">En préparation</p>
+          </div>
           <button
             (click)="addGroup()"
             class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2"
@@ -205,16 +211,16 @@
 
           <div class="flex gap-4">
             <button
-              (click)="goToCreate()"
+              (click)="saveGroups()"
               class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition"
             >
-              Retour
+              Sauvegarder les groupes
             </button>
             <button
-              (click)="createTournament()"
+              (click)="finalizeTournament()"
               class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold transition"
             >
-              Créer le tournoi
+              Finaliser et générer l'arbre
             </button>
           </div>
         </div>

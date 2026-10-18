@@ -15,17 +15,15 @@ export class TournamentService {
   );
   readonly currentTournament = signal<Tournament | null>(null);
 
-  async createTournament(name: string, groups: TournamentGroup[]): Promise<Tournament> {
-    const validGroups = groups.map((group) => ({
-      ...group,
-      participants: [...group.participants],
-    }));
+  async createTournament(name: string, participantsPerGroup: number): Promise<Tournament> {
     const tournament: Tournament = {
       id: Date.now().toString(),
       name,
-      groups: validGroups,
-      bracket: this.generateBracket(validGroups),
+      groups: [],
+      bracket: null,
       createdAt: Date.now(),
+      participantsPerGroup,
+      isDraft: true,
     };
 
     const { id, ...tournamentData } = tournament;
@@ -33,6 +31,45 @@ export class TournamentService {
     this.currentTournament.set(tournament);
 
     return tournament;
+  }
+
+  async finalizeTournament(tournamentId: string, groups: TournamentGroup[]): Promise<void> {
+    const tournament = this.tournaments()?.find((t) => t.id === tournamentId);
+    if (!tournament) return;
+
+    const validGroups = groups.map((group) => ({
+      ...group,
+      participants: [...group.participants],
+    }));
+
+    const bracket = this.generateBracket(validGroups);
+    const { id, ...tournamentData } = {
+      ...tournament,
+      groups: validGroups,
+      bracket,
+      isDraft: false,
+    };
+
+    await update(ref(this.db, `tournaments/${id}`), tournamentData);
+    if (this.currentTournament()?.id === tournament.id) {
+      this.currentTournament.set({ ...tournament, groups: validGroups, bracket, isDraft: false });
+    }
+  }
+
+  async updateTournamentGroups(tournamentId: string, groups: TournamentGroup[]): Promise<void> {
+    const tournament = this.tournaments()?.find((t) => t.id === tournamentId);
+    if (!tournament) return;
+
+    const validGroups = groups.map((group) => ({
+      ...group,
+      participants: [...group.participants],
+    }));
+
+    const { id, ...tournamentData } = { ...tournament, groups: validGroups };
+    await update(ref(this.db, `tournaments/${id}`), tournamentData);
+    if (this.currentTournament()?.id === tournament.id) {
+      this.currentTournament.set({ ...tournament, groups: validGroups });
+    }
   }
 
   private generateBracket(groups: TournamentGroup[]): TournamentMatch | null {
@@ -58,8 +95,8 @@ export class TournamentService {
     const createMatch = (round: string, p1?: string, p2?: string, isBye = false): TournamentMatch => ({
       id: matchId(),
       round,
-      participant1: p1,
-      participant2: p2,
+      participant1: p1 ?? null,
+      participant2: p2 ?? null,
       ...(isBye ? { isBye, winner: p1 } : {}),
     });
 
@@ -75,7 +112,7 @@ export class TournamentService {
       currentRoundMatches.push(createMatch(rounds[0], firstRoundParticipants[i], firstRoundParticipants[i + 1]));
     }
     for (const qualifier of participants.slice(0, byes)) {
-      currentRoundMatches.push(createMatch(rounds[0], qualifier, undefined, true));
+      currentRoundMatches.push(createMatch(rounds[0], qualifier, null, true));
     }
 
     for (let roundIndex = 1; roundIndex < rounds.length; roundIndex++) {
@@ -83,7 +120,7 @@ export class TournamentService {
       for (let i = 0; i < currentRoundMatches.length; i += 2) {
         const match1 = currentRoundMatches[i];
         const match2 = currentRoundMatches[i + 1];
-        const nextMatch = createMatch(rounds[roundIndex], match1.winner, match2?.winner);
+        const nextMatch = createMatch(rounds[roundIndex], match1.winner ?? null, match2?.winner ?? null);
         nextMatch.children = match2 ? [match1, match2] : [match1];
         nextRoundMatches.push(nextMatch);
       }

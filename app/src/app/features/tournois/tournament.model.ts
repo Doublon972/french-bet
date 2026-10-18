@@ -20,4 +20,6 @@ export interface Tournament {
   groups: TournamentGroup[];
   bracket: TournamentMatch | null;
   createdAt: number;
+  participantsPerGroup: number;
+  isDraft: boolean;
 }
