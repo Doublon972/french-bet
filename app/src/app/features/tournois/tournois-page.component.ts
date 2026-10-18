@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, signal, OnInit, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -48,17 +48,16 @@ export class TournoisPageComponent implements OnInit {
   readonly isAdmin = this.authService.isAdmin;
   readonly activeMatch = this.matchService.activeMatch;
   readonly matchRounds = computed(() => this.extractMatchRounds(this.currentTournament()?.bracket ?? null));
-  readonly currentTournamentMatch = computed(
-    () => this.matchRounds().flatMap((round) => round.matches).find((match) => !match.winner) ?? null,
-  );
   readonly activeTournamentMatch = computed<ActiveMatch | null>(() => {
     const tournament = this.currentTournament();
-    const match = this.currentTournamentMatch();
     const active = this.activeMatch();
+    const tournamentMatch = this.matchRounds()
+      .flatMap((round) => round.matches)
+      .find((match) => match.id === active?.tournamentMatchId);
     return tournament &&
-      match &&
+      tournamentMatch &&
       active?.tournamentId === tournament.id &&
-      active.tournamentMatchId === match.id
+      active.tournamentMatchId === tournamentMatch.id
       ? active
       : null;
   });
@@ -76,6 +75,32 @@ export class TournoisPageComponent implements OnInit {
   readonly currentView = signal<'list' | 'create' | 'edit' | 'participants' | 'bracket'>('list');
   readonly activeParticipantField = signal<string | null>(null);
   readonly participantSearch = signal<Record<string, string>>({});
+  private groupsSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingGroupsSave: { tournamentId: string; groups: TournamentGroup[] } | null = null;
+  private groupsSaveQueue: Promise<void> = Promise.resolve();
+
+  constructor() {
+    effect(() => {
+      const tournaments = this.tournaments();
+      const selected = this.currentTournament();
+      if (!selected) return;
+
+      const latest = tournaments.find((tournament) => tournament.id === selected.id);
+      if (!latest) return;
+
+      if (this.currentView() === 'edit') {
+        const localGroups = untracked(() => this.groups());
+        if (JSON.stringify(localGroups) === JSON.stringify(selected.groups)
+          && JSON.stringify(localGroups) !== JSON.stringify(latest.groups)) {
+          this.groups.set(this.copyGroups(latest.groups));
+        }
+      }
+
+      if (JSON.stringify(selected) !== JSON.stringify(latest)) {
+        this.tournamentService.currentTournament.set(latest);
+      }
+    });
+  }
 
   formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleDateString('fr-FR');
@@ -106,6 +131,7 @@ export class TournoisPageComponent implements OnInit {
       this.tournamentService.selectTournament(tournament);
       this.groups.set([this.createGroup(0, teamSize), this.createGroup(1, teamSize)]);
       this.currentView.set('edit');
+      this.scheduleGroupsSave();
     } catch (error) {
       console.error('Erreur lors de la création du tournoi', error);
       alert('Impossible de créer le tournoi. Vérifiez votre connexion et réessayez.');
@@ -123,6 +149,7 @@ export class TournoisPageComponent implements OnInit {
   addGroup(): void {
     const currentGroups = this.groups();
     this.groups.set([...currentGroups, this.createGroup(currentGroups.length, Number(this.participantsPerGroup()))]);
+    this.scheduleGroupsSave();
   }
 
   removeGroup(index: number): void {
@@ -132,6 +159,7 @@ export class TournoisPageComponent implements OnInit {
       return;
     }
     this.groups.set(currentGroups.filter((_, i) => i !== index));
+    this.scheduleGroupsSave();
   }
 
   participantFieldId(groupIndex: number, participantIndex: number): string {
@@ -159,13 +187,18 @@ export class TournoisPageComponent implements OnInit {
     this.activeParticipantField.set(fieldId);
     this.participantSearch.update((queries) => ({ ...queries, [fieldId]: query }));
 
-    const updatedGroups = this.groups().map((group, index) => {
+    const currentGroups = this.groups();
+    const hasSelectedParticipant = !!currentGroups[groupIndex]?.participants[participantIndex];
+    if (!hasSelectedParticipant) return;
+
+    const updatedGroups = currentGroups.map((group, index) => {
       if (index !== groupIndex) return group;
       const participants = [...group.participants];
       participants[participantIndex] = '';
       return { ...group, participants };
     });
     this.groups.set(updatedGroups);
+    this.scheduleGroupsSave();
   }
 
   participantSuggestions(groupIndex: number, participantIndex: number): Player[] {
@@ -200,12 +233,14 @@ export class TournoisPageComponent implements OnInit {
     });
     this.groups.set(updatedGroups);
     this.activeParticipantField.set(null);
+    this.scheduleGroupsSave();
   }
 
   updateGroupName(groupIndex: number, value: string): void {
     this.groups.update((groups) =>
       groups.map((group, index) => (index === groupIndex ? { ...group, name: value } : group)),
     );
+    this.scheduleGroupsSave();
   }
 
   async finalizeTournament(): Promise<void> {
@@ -230,24 +265,12 @@ export class TournoisPageComponent implements OnInit {
     }
 
     try {
+      await this.flushGroupsSave();
       await this.tournamentService.finalizeTournament(tournament.id, groups);
       this.currentView.set('bracket');
     } catch (error) {
       console.error('Erreur lors de la finalisation du tournoi', error);
       alert('Impossible de finaliser le tournoi. Vérifiez votre connexion et réessayez.');
-    }
-  }
-
-  async saveGroups(): Promise<void> {
-    const tournament = this.currentTournament();
-    if (!tournament) return;
-
-    try {
-      await this.tournamentService.updateTournamentGroups(tournament.id, this.groups());
-      alert('Groupes sauvegardés avec succès !');
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde des groupes', error);
-      alert('Impossible de sauvegarder les groupes. Vérifiez votre connexion et réessayez.');
     }
   }
 
@@ -264,15 +287,50 @@ export class TournoisPageComponent implements OnInit {
   editTournament(tournament: Tournament): void {
     this.tournamentService.selectTournament(tournament);
     this.participantsPerGroup.set(tournament.participantsPerGroup);
-    this.groups.set(
-      tournament.groups.length > 0
-        ? tournament.groups.map((group) => ({ ...group, participants: [...group.participants] }))
-        : [
-            this.createGroup(0, tournament.participantsPerGroup),
-            this.createGroup(1, tournament.participantsPerGroup),
-          ],
-    );
+    const groups = tournament.groups.length > 0
+      ? this.copyGroups(tournament.groups)
+      : [
+          this.createGroup(0, tournament.participantsPerGroup),
+          this.createGroup(1, tournament.participantsPerGroup),
+        ];
+    this.groups.set(groups);
     this.currentView.set('edit');
+    if (tournament.groups.length === 0) this.scheduleGroupsSave();
+  }
+
+  private copyGroups(groups: TournamentGroup[]): TournamentGroup[] {
+    return groups.map((group) => ({ ...group, participants: [...group.participants] }));
+  }
+
+  private scheduleGroupsSave(): void {
+    const tournament = this.currentTournament();
+    if (!tournament?.isDraft) return;
+
+    this.pendingGroupsSave = {
+      tournamentId: tournament.id,
+      groups: this.copyGroups(this.groups()),
+    };
+    if (this.groupsSaveTimer) clearTimeout(this.groupsSaveTimer);
+    this.groupsSaveTimer = setTimeout(() => void this.flushGroupsSave(), 250);
+  }
+
+  private async flushGroupsSave(): Promise<void> {
+    if (this.groupsSaveTimer) {
+      clearTimeout(this.groupsSaveTimer);
+      this.groupsSaveTimer = null;
+    }
+    const pending = this.pendingGroupsSave;
+    if (!pending) return this.groupsSaveQueue;
+    this.pendingGroupsSave = null;
+
+    this.groupsSaveQueue = this.groupsSaveQueue
+      .catch(() => undefined)
+      .then(() => this.tournamentService.updateTournamentGroups(pending.tournamentId, pending.groups))
+      .catch((error: unknown) => {
+        console.error('Erreur lors de la sauvegarde automatique des groupes', error);
+        alert('Impossible de sauvegarder automatiquement les groupes. Vérifiez votre connexion et réessayez.');
+      });
+    return this.groupsSaveQueue;
   }
 
   async deleteTournament(tournamentId: string): Promise<void> {

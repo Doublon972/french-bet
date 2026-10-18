@@ -34,8 +34,9 @@ export class TournamentService {
   }
 
   async finalizeTournament(tournamentId: string, groups: TournamentGroup[]): Promise<void> {
-    const tournament = this.tournaments()?.find((t) => t.id === tournamentId);
-    if (!tournament) return;
+    const tournament = this.tournaments()?.find((t) => t.id === tournamentId)
+      ?? (this.currentTournament()?.id === tournamentId ? this.currentTournament()! : null);
+    if (!tournament) throw new Error(`Tournament ${tournamentId} was not found.`);
 
     const validGroups = groups.map((group) => ({
       ...group,
@@ -43,33 +44,22 @@ export class TournamentService {
     }));
 
     const bracket = this.generateBracket(validGroups);
-    const { id, ...tournamentData } = {
-      ...tournament,
+    await update(ref(this.db, `tournaments/${tournamentId}`), {
       groups: validGroups,
       bracket,
       isDraft: false,
-    };
-
-    await update(ref(this.db, `tournaments/${id}`), tournamentData);
+    });
     if (this.currentTournament()?.id === tournament.id) {
       this.currentTournament.set({ ...tournament, groups: validGroups, bracket, isDraft: false });
     }
   }
 
   async updateTournamentGroups(tournamentId: string, groups: TournamentGroup[]): Promise<void> {
-    const tournament = this.tournaments()?.find((t) => t.id === tournamentId);
-    if (!tournament) return;
-
     const validGroups = groups.map((group) => ({
       ...group,
       participants: [...group.participants],
     }));
-
-    const { id, ...tournamentData } = { ...tournament, groups: validGroups };
-    await update(ref(this.db, `tournaments/${id}`), tournamentData);
-    if (this.currentTournament()?.id === tournament.id) {
-      this.currentTournament.set({ ...tournament, groups: validGroups });
-    }
+    await set(ref(this.db, `tournaments/${tournamentId}/groups`), validGroups);
   }
 
   private generateBracket(groups: TournamentGroup[]): TournamentMatch | null {
