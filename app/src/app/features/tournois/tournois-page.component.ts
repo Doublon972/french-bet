@@ -208,32 +208,6 @@ export class TournoisPageComponent implements OnInit {
     );
   }
 
-  async createTournament(): Promise<void> {
-    const name = this.tournamentName().trim();
-    if (!name) {
-      alert('Veuillez entrer un nom pour le tournoi');
-      return;
-    }
-
-    const groups = this.groups();
-    const allParticipants = groups.flatMap((group) => group.participants);
-    if (groups.length < 2 || allParticipants.some((id) => !id)) {
-      alert('Sélectionnez un combattant enregistré pour chaque place de chaque équipe.');
-      return;
-    }
-
-    const uniqueParticipants = new Set(allParticipants);
-    if (uniqueParticipants.size !== allParticipants.length) {
-      alert('Un combattant ne peut être sélectionné qu’une seule fois dans le tournoi.');
-      return;
-    }
-    if (allParticipants.some((id) => !this.players().some((player) => player.id === id))) {
-      alert('Un combattant sélectionné n’existe plus dans la base de données. Veuillez le sélectionner à nouveau.');
-      return;
-    }
-
-  }
-
   async finalizeTournament(): Promise<void> {
     const tournament = this.currentTournament();
     if (!tournament) return;
@@ -323,7 +297,7 @@ export class TournoisPageComponent implements OnInit {
     this.currentView.set('participants');
   }
 
-  teamLabel(tournament: Tournament, groupId: string | undefined): string {
+  teamLabel(tournament: Tournament, groupId: string | null | undefined): string {
     const group = tournament.groups.find((candidate) => candidate.id === groupId);
     return group ? tournamentTeamLabel(group, this.players()) : 'En attente';
   }

@@ -92,7 +92,7 @@ export class TournamentService {
     const rounds = this.calculateRounds(participants.length);
     const matchId = () => Math.random().toString(36).slice(2, 11);
 
-    const createMatch = (round: string, p1?: string, p2?: string, isBye = false): TournamentMatch => ({
+    const createMatch = (round: string, p1?: string | null, p2?: string | null, isBye = false): TournamentMatch => ({
       id: matchId(),
       round,
       participant1: p1 ?? null,
