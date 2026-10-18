@@ -252,17 +252,27 @@ export class TournoisPageComponent implements OnInit {
   }
 
   selectTournament(tournament: Tournament): void {
-    this.tournamentService.selectTournament(tournament);
     if (tournament.isDraft) {
-      this.participantsPerGroup.set(tournament.participantsPerGroup);
-      this.groups.set(tournament.groups.length > 0 ? tournament.groups : [
-        this.createGroup(0, tournament.participantsPerGroup),
-        this.createGroup(1, tournament.participantsPerGroup)
-      ]);
-      this.currentView.set('edit');
-    } else {
-      this.currentView.set('bracket');
+      this.editTournament(tournament);
+      return;
     }
+
+    this.tournamentService.selectTournament(tournament);
+    this.currentView.set('bracket');
+  }
+
+  editTournament(tournament: Tournament): void {
+    this.tournamentService.selectTournament(tournament);
+    this.participantsPerGroup.set(tournament.participantsPerGroup);
+    this.groups.set(
+      tournament.groups.length > 0
+        ? tournament.groups.map((group) => ({ ...group, participants: [...group.participants] }))
+        : [
+            this.createGroup(0, tournament.participantsPerGroup),
+            this.createGroup(1, tournament.participantsPerGroup),
+          ],
+    );
+    this.currentView.set('edit');
   }
 
   async deleteTournament(tournamentId: string): Promise<void> {
