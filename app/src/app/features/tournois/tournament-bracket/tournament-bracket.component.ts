@@ -95,7 +95,7 @@ export class TournamentBracketComponent implements OnChanges {
 
     visit(root, 0);
     this.leafMatchCount = nextLeafIndex;
-    this.bracketHeight = Math.max(600, this.leafMatchCount * 140);
+    this.bracketHeight = Math.max(680, this.leafMatchCount * 170);
     return [...rounds.entries()]
       .sort(([depthA], [depthB]) => depthB - depthA)
       .map(([, round]) => round);

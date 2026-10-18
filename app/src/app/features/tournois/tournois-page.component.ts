@@ -72,6 +72,9 @@ export class TournoisPageComponent implements OnInit {
   readonly tournamentName = signal('');
   readonly participantsPerGroup = signal(2);
   readonly groups = signal<TournamentGroup[]>([]);
+  readonly selectedParticipantCount = computed(() =>
+    this.groups().reduce((count, group) => count + group.participants.filter(Boolean).length, 0),
+  );
   readonly currentView = signal<'list' | 'create' | 'edit' | 'participants' | 'bracket'>('list');
   readonly activeParticipantField = signal<string | null>(null);
   readonly participantSearch = signal<Record<string, string>>({});
