@@ -97,7 +97,7 @@ export class TournamentService {
       round,
       participant1: p1 ?? null,
       participant2: p2 ?? null,
-      ...(isBye ? { isBye, winner: p1 } : {}),
+      ...(isBye ? { isBye, winner: p1 ?? undefined } : {}),
     });
 
     let power = 1;
