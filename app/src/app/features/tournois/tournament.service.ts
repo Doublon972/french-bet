@@ -107,7 +107,11 @@ export class TournamentService {
   hasCompletedMatches(bracket: TournamentMatch | null): boolean {
     if (!bracket) return false;
     const checkMatch = (match: TournamentMatch): boolean => {
-      if (match.winner) return true;
+      // Un match est considéré terminé seulement s'il a deux participants définis et un gagnant
+      // Les matchs "En attente" (participants null) ou les bye ne comptent pas
+      if (match.winner && match.participant1 && match.participant2 && !match.isBye) {
+        return true;
+      }
       if (match.children) {
         return match.children.some(checkMatch);
       }
