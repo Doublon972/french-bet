@@ -66,6 +66,56 @@ export class TournamentService {
     }
   }
 
+  async regenerateBracket(tournamentId: string, groups: TournamentGroup[]): Promise<void> {
+    const tournament = this.tournaments()?.find((t) => t.id === tournamentId)
+      ?? (this.currentTournament()?.id === tournamentId ? this.currentTournament()! : null);
+    if (!tournament) throw new Error(`Tournament ${tournamentId} was not found.`);
+
+    const validGroups = groups.map((group) => ({
+      ...group,
+      participants: [...group.participants],
+    }));
+
+    const bracket = this.generateBracket(validGroups);
+    await update(ref(this.db, `tournaments/${tournamentId}`), {
+      groups: validGroups,
+      bracket,
+    });
+    if (this.currentTournament()?.id === tournament.id) {
+      this.currentTournament.set({ ...tournament, groups: validGroups, bracket });
+    }
+  }
+
+  async swapGroups(tournamentId: string, groupIndex1: number, groupIndex2: number): Promise<void> {
+    const tournament = this.tournaments()?.find((t) => t.id === tournamentId)
+      ?? (this.currentTournament()?.id === tournamentId ? this.currentTournament()! : null);
+    if (!tournament) throw new Error(`Tournament ${tournamentId} was not found.`);
+
+    const groups = [...tournament.groups];
+    [groups[groupIndex1], groups[groupIndex2]] = [groups[groupIndex2], groups[groupIndex1]];
+
+    const bracket = this.generateBracket(groups);
+    await update(ref(this.db, `tournaments/${tournamentId}`), {
+      groups,
+      bracket,
+    });
+    if (this.currentTournament()?.id === tournament.id) {
+      this.currentTournament.set({ ...tournament, groups, bracket });
+    }
+  }
+
+  hasCompletedMatches(bracket: TournamentMatch | null): boolean {
+    if (!bracket) return false;
+    const checkMatch = (match: TournamentMatch): boolean => {
+      if (match.winner) return true;
+      if (match.children) {
+        return match.children.some(checkMatch);
+      }
+      return false;
+    };
+    return checkMatch(bracket);
+  }
+
   async addTournamentGroups(tournamentId: string, groupsToAdd: TournamentGroup[]): Promise<void> {
     const groupsRef = ref(this.db, `tournaments/${tournamentId}/groups`);
     const result = await runTransaction(groupsRef, (current) => {

@@ -170,6 +170,22 @@ export class TournoisPageComponent implements OnInit {
     }
   }
 
+  moveGroupUp(index: number): void {
+    if (index === 0) return;
+    const currentGroups = this.groups();
+    const newGroups = [...currentGroups];
+    [newGroups[index - 1], newGroups[index]] = [newGroups[index], newGroups[index - 1]];
+    this.groups.set(newGroups);
+  }
+
+  moveGroupDown(index: number): void {
+    const currentGroups = this.groups();
+    if (index === currentGroups.length - 1) return;
+    const newGroups = [...currentGroups];
+    [newGroups[index], newGroups[index + 1]] = [newGroups[index + 1], newGroups[index]];
+    this.groups.set(newGroups);
+  }
+
   participantFieldId(groupIndex: number, participantIndex: number): string {
     return `${this.groups()[groupIndex]?.id}-${participantIndex}`;
   }
@@ -297,7 +313,55 @@ export class TournoisPageComponent implements OnInit {
     }
 
     this.tournamentService.selectTournament(tournament);
+    this.participantsPerGroup.set(tournament.participantsPerGroup);
+    this.groups.set(this.copyGroups(tournament.groups));
     this.currentView.set('bracket');
+  }
+
+  async regenerateBracket(): Promise<void> {
+    const tournament = this.currentTournament();
+    if (!tournament) return;
+
+    if (this.tournamentService.hasCompletedMatches(tournament.bracket)) {
+      alert('Impossible de régénérer le bracket car des matchs sont déjà terminés.');
+      return;
+    }
+
+    if (!confirm('Voulez-vous vraiment régénérer l\'arbre du tournoi ? Les matchs en cours seront annulés.')) {
+      return;
+    }
+
+    try {
+      await this.tournamentService.regenerateBracket(tournament.id, this.groups());
+      alert('Arbre régénéré avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la régénération du bracket', error);
+      alert('Impossible de régénérer l\'arbre. Vérifiez votre connexion et réessayez.');
+    }
+  }
+
+  async swapGroups(groupIndex1: number, groupIndex2: number): Promise<void> {
+    const tournament = this.currentTournament();
+    if (!tournament) return;
+
+    if (this.tournamentService.hasCompletedMatches(tournament.bracket)) {
+      alert('Impossible de déplacer les groupes car des matchs sont déjà terminés.');
+      return;
+    }
+
+    try {
+      await this.tournamentService.swapGroups(tournament.id, groupIndex1, groupIndex2);
+      alert('Groupes échangés avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de l\'échange des groupes', error);
+      alert('Impossible d\'échanger les groupes. Vérifiez votre connexion et réessayez.');
+    }
+  }
+
+  canModifyBracket(): boolean {
+    const tournament = this.currentTournament();
+    if (!tournament || !tournament.bracket) return false;
+    return !this.tournamentService.hasCompletedMatches(tournament.bracket);
   }
 
   editTournament(tournament: Tournament): void {
