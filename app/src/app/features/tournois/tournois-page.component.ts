@@ -152,7 +152,7 @@ export class TournoisPageComponent implements OnInit {
     const currentGroups = this.groups();
     const group = this.createGroup(currentGroups.length, Number(this.participantsPerGroup()));
     this.groups.set([...currentGroups, group]);
-    this.persistAddedGroups([group]);
+    // Ne pas sauvegarder automatiquement - sera sauvegardé lors de la régénération/finalisation
   }
 
   removeGroup(index: number): void {
@@ -334,6 +334,7 @@ export class TournoisPageComponent implements OnInit {
     try {
       await this.tournamentService.regenerateBracket(tournament.id, this.groups());
       alert('Arbre régénéré avec succès !');
+      this.currentView.set('bracket');
     } catch (error) {
       console.error('Erreur lors de la régénération du bracket', error);
       alert('Impossible de régénérer l\'arbre. Vérifiez votre connexion et réessayez.');
@@ -392,6 +393,9 @@ export class TournoisPageComponent implements OnInit {
   private persistParticipant(groupId: string, participantIndex: number, participantId: string): void {
     const tournamentId = this.currentTournament()?.id;
     if (!tournamentId) return;
+    // Vérifier si le groupe existe déjà dans Firebase
+    const groupExists = this.currentTournament()?.groups.some(g => g.id === groupId);
+    if (!groupExists) return; // Ne pas sauvegarder automatiquement les participants des nouveaux groupes
     this.enqueueGroupsSave(() =>
       this.tournamentService.updateTournamentParticipant(tournamentId, groupId, participantIndex, participantId),
     );
